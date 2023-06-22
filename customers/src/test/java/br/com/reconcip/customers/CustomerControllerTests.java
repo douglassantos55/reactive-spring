@@ -10,6 +10,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.time.Instant;
+
 @SpringBootTest
 public class CustomerControllerTests {
     private WebTestClient client;
@@ -107,5 +109,42 @@ public class CustomerControllerTests {
                         "{\"id\":2,\"name\":\"john 1\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"san francisco\"}," +
                         "{\"id\":3,\"name\":\"john 2\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"california\"}" +
                 "]");
+    }
+
+    @Test
+    void getNonExistent() {
+        client.get()
+                .uri("/customers/10000")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void getInvalid() {
+        client.get()
+                .uri("/customers/something")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+    }
+
+    @Test
+    void getExisting() {
+        Customer customer = new Customer();
+        customer.setName("john 1");
+        customer.setBillingAddress("san francisco");
+        repository.save(customer).block();
+
+        client.get()
+                .uri("/customers/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json("{}");
     }
 }
