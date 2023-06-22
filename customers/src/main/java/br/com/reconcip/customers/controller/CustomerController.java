@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -19,6 +20,10 @@ public class CustomerController {
         this.repository = repository;
     }
 
+    @GetMapping
+    public Flux<Customer> list() {
+        return repository.findByDeletedAtIsNull();
+    }
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Customer> create(@Valid @RequestBody Customer customer) {

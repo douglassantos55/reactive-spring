@@ -77,4 +77,35 @@ public class CustomerControllerTests {
                 .expectBody()
                 .json("{\"name\":\"john doe\",\"deliveryAddress\":\"brooklyn\",\"billingAddress\":\"new york\"}");
     }
+
+    @Test
+    void list() {
+        Customer c1 = new Customer();
+        c1.setName("john 1");
+        c1.setBillingAddress("san francisco");
+        repository.save(c1).block();
+
+        Customer c2 = new Customer();
+        c2.setName("john 2");
+        c2.setBillingAddress("san francisco");
+        c2.setDeliveryAddress("california");
+        repository.save(c2).block();
+
+        Customer c3 = new Customer();
+        c3.setName("john 3");
+        c3.setBillingAddress("san francisco");
+        c3.setDeliveryAddress("new york");
+        c3.setDeletedAt(Instant.now());
+        repository.save(c3).block();
+
+        client.get()
+                .uri("/customers")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().json("[" +
+                        "{\"id\":2,\"name\":\"john 1\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"san francisco\"}," +
+                        "{\"id\":3,\"name\":\"john 2\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"california\"}" +
+                "]");
+    }
 }
