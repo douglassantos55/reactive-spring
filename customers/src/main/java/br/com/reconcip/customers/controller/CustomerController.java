@@ -6,10 +6,13 @@ import br.com.reconcip.customers.repository.CustomerRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/customers")
@@ -37,6 +40,19 @@ public class CustomerController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Customer> create(@Valid @RequestBody Customer customer) {
         return repository.save(customer);
+    }
+
+    @PutMapping("/{id}")
+    public Mono<Customer> update(@PathVariable Long id, @Valid @RequestBody Customer data) {
+        Mono<Customer> customer = get(id);
+
+        return customer.flatMap(customer1 -> {
+            customer1.setName(data.getName());
+            customer1.setBillingAddress(data.getBillingAddress());
+            customer1.setDeliveryAddress(data.getDeliveryAddress());
+
+            return repository.save(customer1);
+        });
     }
 
     @DeleteMapping("/{id}")

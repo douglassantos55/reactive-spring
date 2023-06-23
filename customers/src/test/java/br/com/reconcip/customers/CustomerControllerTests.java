@@ -106,8 +106,8 @@ public class CustomerControllerTests {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody().json("[" +
-                        "{\"id\":2,\"name\":\"john 1\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"san francisco\"}," +
-                        "{\"id\":3,\"name\":\"john 2\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"california\"}" +
+                        "{\"id\":3,\"name\":\"john 1\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"san francisco\"}," +
+                        "{\"id\":4,\"name\":\"john 2\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"california\"}" +
                 "]");
     }
 
@@ -136,10 +136,11 @@ public class CustomerControllerTests {
         Customer customer = new Customer();
         customer.setName("john 1");
         customer.setBillingAddress("san francisco");
-        repository.save(customer).block();
+
+        Customer created = repository.save(customer).block();
 
         client.get()
-                .uri("/customers/1")
+                .uri("/customers/" + created.getId())
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus()
@@ -175,7 +176,7 @@ public class CustomerControllerTests {
         Customer created = repository.save(customer).block();
 
         client.delete()
-                .uri("/customers/"+created.getId())
+                .uri("/customers/" + created.getId())
                 .exchange()
                 .expectStatus()
                 .isNoContent();
@@ -186,6 +187,65 @@ public class CustomerControllerTests {
                 .exchange()
                 .expectStatus()
                 .isNotFound();
+
+    }
+
+    @Test
+    void updateNonExisting() {
+        Customer customer = new Customer();
+        customer.setName("updating");
+        customer.setBillingAddress("New Jersey");
+
+        client.put()
+                .uri("/customers/15777")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(customer)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void updateInvalid() {
+        Customer customer = new Customer();
+        customer.setName("updating");
+        customer.setBillingAddress("New Jersey");
+
+        client.put()
+                .uri("/customers/something")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(customer)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+    }
+
+    @Test
+    void updateExisting() {
+        Customer customer = new Customer();
+        customer.setName("updating");
+        customer.setBillingAddress("New Jersey");
+
+        Customer created = repository.save(customer).block();
+        System.out.println(created.getId());
+
+        Customer data = new Customer();
+        data.setName("should be updated");
+        data.setBillingAddress("nova iorque");
+        data.setDeliveryAddress("italy");
+
+        client.put()
+                .uri("/customers/" + created.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(data)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json("{\"name\":\"should be updated\",\"billingAddress\":\"nova iorque\",\"deliveryAddress\":\"italy\"}");
 
     }
 }
