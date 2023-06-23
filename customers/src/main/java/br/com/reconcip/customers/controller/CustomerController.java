@@ -38,4 +38,10 @@ public class CustomerController {
     public Mono<Customer> create(@Valid @RequestBody Customer customer) {
         return repository.save(customer);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> delete(@PathVariable Long id) {
+        return repository.deleteById(id);
+    }
 }

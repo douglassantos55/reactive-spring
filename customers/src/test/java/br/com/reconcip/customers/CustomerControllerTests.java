@@ -147,4 +147,45 @@ public class CustomerControllerTests {
                 .expectBody()
                 .json("{}");
     }
+
+    @Test
+    void deleteNonExisting() {
+        client.delete()
+                .uri("/customers/1000")
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+    }
+
+    @Test
+    void deleteInvalid() {
+        client.delete()
+                .uri("/customers/something")
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+    }
+
+    @Test
+    void deleteExisting() {
+        Customer customer = new Customer();
+        customer.setName("foobar");
+        customer.setBillingAddress("new york");
+
+        Customer created = repository.save(customer).block();
+
+        client.delete()
+                .uri("/customers/"+created.getId())
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+        client.get()
+                .uri("/customers/" + created.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+
+    }
 }
