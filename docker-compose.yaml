@@ -1,0 +1,21 @@
+version: '3'
+services:
+  rabbitmq:
+    image: 'rabbitmq'
+    networks:
+      - infra
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - 'rabbitmq:/var/lib/rabbitmq'
+      - './rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf'
+
+volumes:
+  rabbitmq:
+    driver: local
+
+networks:
+  infra:
+    driver: bridge
+    name: fgto-infra
