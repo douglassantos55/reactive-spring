@@ -12,7 +12,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.time.Instant;
 
-@SpringBootTest
+@SpringBootTest(classes = AmqpTestConfiguration.class)
 public class CustomerControllerTests {
     private WebTestClient client;
 
