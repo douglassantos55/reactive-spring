@@ -64,6 +64,11 @@ public class CustomerController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(@PathVariable Long id) {
-        return repository.deleteById(id);
+        return repository.deleteById(id).doOnSuccess(__ -> {
+            Message message = new Message(new byte[]{id.byteValue()});
+            message.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+
+            template.send("exchange.customers", "customer.deleted", message);
+        });
     }
 }
