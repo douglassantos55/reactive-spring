@@ -1,18 +1,14 @@
 package br.com.reconcip.customers.entity;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 
-@Entity
 @Table(name="customers")
 public class Customer {
     @Id
-    @jakarta.persistence.Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @NotEmpty

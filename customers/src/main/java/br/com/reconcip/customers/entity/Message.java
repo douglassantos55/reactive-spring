@@ -1,14 +1,11 @@
 package br.com.reconcip.customers.entity;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-@Entity
 @Table(name = "messages")
 public class Message {
     @Id
-    @org.springframework.data.annotation.Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     private byte[] body;
