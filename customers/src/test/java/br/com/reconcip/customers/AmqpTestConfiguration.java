@@ -1,7 +1,5 @@
 package br.com.reconcip.customers;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.BasicProperties;
 import com.rabbitmq.client.Channel;
 import org.mockito.Mockito;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;

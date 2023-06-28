@@ -1,4 +1,4 @@
-package br.com.reconcip.customers;
+package br.com.reconcip.customers.exception.handler;
 
 import br.com.reconcip.customers.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;

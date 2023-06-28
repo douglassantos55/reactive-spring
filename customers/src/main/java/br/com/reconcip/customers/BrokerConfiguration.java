@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class AmqpConfiguration {
+public class BrokerConfiguration {
     @Value("${amqp.hostname}")
     private String hostname;
 

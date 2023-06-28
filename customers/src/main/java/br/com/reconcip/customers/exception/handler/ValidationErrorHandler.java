@@ -1,4 +1,4 @@
-package br.com.reconcip.customers;
+package br.com.reconcip.customers.exception.handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;

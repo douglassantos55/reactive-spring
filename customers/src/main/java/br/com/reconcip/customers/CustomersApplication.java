@@ -1,13 +1,9 @@
 package br.com.reconcip.customers;
 
-import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
-import org.springframework.r2dbc.connection.init.ConnectionFactoryInitializer;
-import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -41,14 +37,6 @@ public class CustomersApplication {
 	@Bean
 	public RouterFunction<ServerResponse> router() {
 		return RouterFunctions.route(RequestPredicates.GET("/hello"), request -> this.hello());
-	}
-
-	@Bean
-	public ConnectionFactoryInitializer initializer(ConnectionFactory factory) {
-		ConnectionFactoryInitializer initializer = new ConnectionFactoryInitializer();
-		initializer.setConnectionFactory(factory);
-		initializer.setDatabasePopulator(new ResourceDatabasePopulator(new ClassPathResource("schema.sql")));
-		return initializer;
 	}
 }
 
