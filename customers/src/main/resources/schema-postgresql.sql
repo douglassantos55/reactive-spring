@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS customers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    billing_address VARCHAR(255) NOT NULL,
+    delivery_address VARCHAR(255) DEFAULT NULL,
+    deleted_at TIMESTAMP DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    routing_key VARCHAR(104) NOT NULL,
+    exchange VARCHAR(100) NOT NULL,
+    body BYTEA NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

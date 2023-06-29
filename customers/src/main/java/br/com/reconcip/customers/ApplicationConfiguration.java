@@ -13,9 +13,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class ApplicationConfiguration {
     @Bean
     public ConnectionFactoryInitializer initializer(ConnectionFactory factory) {
+        String filename = String.format("schema-%s.sql", factory.getMetadata().getName().toLowerCase());
+        ClassPathResource schema = new ClassPathResource(filename);
+
         ConnectionFactoryInitializer initializer = new ConnectionFactoryInitializer();
         initializer.setConnectionFactory(factory);
-        initializer.setDatabasePopulator(new ResourceDatabasePopulator(new ClassPathResource("schema.sql")));
+        initializer.setDatabasePopulator(new ResourceDatabasePopulator(schema));
+
         return initializer;
     }
 }
