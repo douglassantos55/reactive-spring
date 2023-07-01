@@ -1,4 +1,4 @@
-package br.com.reconcip.customers;
+package br.com.fgto.customers;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

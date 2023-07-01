@@ -1,4 +1,4 @@
-package br.com.reconcip.customers.exception;
+package br.com.fgto.customers.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String entity, Long id) {

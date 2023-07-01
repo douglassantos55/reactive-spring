@@ -1,4 +1,4 @@
-package br.com.reconcip.customers;
+package br.com.fgto.customers;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

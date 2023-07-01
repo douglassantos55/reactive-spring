@@ -1,4 +1,4 @@
-package br.com.reconcip.customers.entity;
+package br.com.fgto.customers.entity;
 
 import jakarta.validation.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;

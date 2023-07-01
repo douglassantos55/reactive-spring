@@ -1,7 +1,7 @@
-package br.com.reconcip.customers;
+package br.com.fgto.customers;
 
-import br.com.reconcip.customers.entity.Customer;
-import br.com.reconcip.customers.repository.CustomerRepository;
+import br.com.fgto.customers.repository.CustomerRepository;
+import br.com.fgto.customers.entity.Customer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,7 +155,7 @@ public class CustomerControllerTests {
                 .uri("/customers/1000")
                 .exchange()
                 .expectStatus()
-                .isNoContent();
+                .isNotFound();
     }
 
     @Test

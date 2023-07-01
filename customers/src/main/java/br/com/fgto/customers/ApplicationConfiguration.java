@@ -1,4 +1,4 @@
-package br.com.reconcip.customers;
+package br.com.fgto.customers;
 
 import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.context.annotation.Bean;

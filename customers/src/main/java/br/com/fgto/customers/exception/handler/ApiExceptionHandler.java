@@ -1,6 +1,6 @@
-package br.com.reconcip.customers.exception.handler;
+package br.com.fgto.customers.exception.handler;
 
-import br.com.reconcip.customers.exception.ResourceNotFoundException;
+import br.com.fgto.customers.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
