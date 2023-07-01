@@ -1,4 +1,4 @@
-package br.com.reconcip.customers.entity;
+package br.com.fgto.customers.entity;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;

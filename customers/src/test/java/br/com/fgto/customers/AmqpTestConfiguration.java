@@ -1,4 +1,4 @@
-package br.com.reconcip.customers;
+package br.com.fgto.customers;
 
 import com.rabbitmq.client.Channel;
 import org.mockito.Mockito;

@@ -1,4 +1,4 @@
-package br.com.reconcip.customers;
+package br.com.fgto.customers;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
