@@ -161,4 +161,180 @@ public class RestaurantControllerTests {
                 .expectBody()
                 .json("[{\"name\":\"Tamago\",\"menu\":[{\"name\":\"tamagoyaki\",\"price\":0}]}]");
     }
+
+    @Test
+    void updateInvalid() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("pizzeria");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("generic pizza");
+        pizza.setPrice(0.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+
+        restaurant.setMenu(menu);
+
+        client.put()
+                .uri("/restaurants/15253")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(restaurant)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void updateNotFound() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("generic restaurant");
+
+        MenuItem item = new MenuItem();
+        item.setName("generic food");
+        item.setPrice(0.1);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(item);
+
+        restaurant.setMenu(menu);
+
+        client.put()
+                .uri("/restaurants/64a0b15c1f41eb7cc6d707d9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(restaurant)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void updateWithoutMenu() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("Mama mia");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("mama pizza");
+        pizza.setPrice(20.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+
+        restaurant.setMenu(menu);
+        restaurant = repository.save(restaurant).block();
+
+        Restaurant updated = new Restaurant();
+        updated.setName("updated");
+        updated.setDescription("no more mama mia");
+
+        client.put()
+                .uri("/restaurants/" + restaurant.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(updated)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .json("{\"errors\":{\"menu\":\"must not be empty\"}}");
+    }
+
+    @Test
+    void updateMenuWithoutName() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("Mama mia");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("mama pizza");
+        pizza.setPrice(20.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+
+        restaurant.setMenu(menu);
+        restaurant = repository.save(restaurant).block();
+
+        Restaurant updated = new Restaurant();
+        updated.setName("updated");
+        updated.setDescription("no more mama mia");
+
+        MenuItem nameless = new MenuItem();
+        nameless.setPrice(10.7);
+
+        ArrayList<MenuItem> updatedMenu = new ArrayList<>();
+        updatedMenu.add(nameless);
+        updated.setMenu(updatedMenu);
+
+        client.put()
+                .uri("/restaurants/" + restaurant.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(updated)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .json("{\"errors\":{\"menu.0.name\":\"must not be empty\"}}");
+    }
+
+    @Test
+    void updateEverything() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("Mama mia");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("mama pizza");
+        pizza.setPrice(20.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+
+        restaurant.setMenu(menu);
+        restaurant = repository.save(restaurant).block();
+
+        Restaurant updated = new Restaurant();
+        updated.setName("updated");
+        updated.setBlocked(true);
+        updated.setPhone("5 555 032273");
+        updated.setAddress("narnia");
+        updated.setWorkingHours("Monday to Friday - 19:00 to 23:00");
+        updated.setDescription("no more mama mia");
+
+        MenuItem nameless = new MenuItem();
+        nameless.setName("not nameless");
+        nameless.setPrice(10.7);
+
+        MenuItem chicken = new MenuItem();
+        chicken.setName("chicken");
+        chicken.setPrice(7.55);
+
+        ArrayList<MenuItem> updatedMenu = new ArrayList<>();
+        updatedMenu.add(nameless);
+        updatedMenu.add(chicken);
+        updated.setMenu(updatedMenu);
+
+        client.put()
+                .uri("/restaurants/" + restaurant.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(updated)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json("{" +
+                        "\"name\":\"updated\"," +
+                        "\"phone\":\"5 555 032273\"," +
+                        "\"address\":\"narnia\"," +
+                        "\"blocked\":true," +
+                        "\"workingHours\":\"Monday to Friday - 19:00 to 23:00\"," +
+                        "\"description\":\"no more mama mia\"," +
+                        "\"menu\":[" +
+                            "{\"name\":\"not nameless\",\"price\":10.7}, " +
+                            "{\"name\":\"chicken\",\"price\":7.55}" +
+                        "]" +
+                "}");
+    }
 }
