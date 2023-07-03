@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,10 @@ public class Restaurant {
     @Valid
     @NotEmpty
     private List<MenuItem> menu = new ArrayList<>();
+
+    private Instant deletedAt;
+
+    private boolean blocked;
 
     public String getId() {
         return id;
@@ -82,5 +87,21 @@ public class Restaurant {
 
     public void setMenu(List<MenuItem> menu) {
         this.menu = menu;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public boolean isBlocked() {
+        return blocked;
+    }
+
+    public void setBlocked(boolean blocked) {
+        this.blocked = blocked;
     }
 }

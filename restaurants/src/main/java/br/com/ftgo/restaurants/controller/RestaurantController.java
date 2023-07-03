@@ -17,7 +17,7 @@ public class RestaurantController {
 
     @GetMapping
     public Flux<Restaurant> list() {
-        return repository.findAll();
+        return repository.findByDeletedAtIsNullAndBlockedIsFalse();
     }
 
     @PostMapping
