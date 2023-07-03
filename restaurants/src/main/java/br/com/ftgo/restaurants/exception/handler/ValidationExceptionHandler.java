@@ -1,4 +1,4 @@
-package br.com.ftgo.restaurants;
+package br.com.ftgo.restaurants.exception.handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;

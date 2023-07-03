@@ -11,6 +11,7 @@ import org.springframework.boot.web.reactive.context.ReactiveWebApplicationConte
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.time.Instant;
 import java.util.ArrayList;
 
 @SpringBootTest
@@ -336,5 +337,103 @@ public class RestaurantControllerTests {
                             "{\"name\":\"chicken\",\"price\":7.55}" +
                         "]" +
                 "}");
+    }
+
+    @Test
+    void getInvalid() {
+        client.get()
+                .uri("/restaurants/1515151")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void getNonExistent() {
+        client.get()
+                .uri("/restaurants/64a0d538c2f01b2e0e6d849b")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void getDeleted() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setDeletedAt(Instant.now());
+        restaurant.setName("Mama mia");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("mama pizza");
+        pizza.setPrice(20.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+
+        restaurant.setMenu(menu);
+        restaurant = repository.save(restaurant).block();
+
+        client.get()
+                .uri("/restaurants/" + restaurant.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void getBlocked() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setBlocked(true);
+        restaurant.setName("Mama mia");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("mama pizza");
+        pizza.setPrice(20.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+
+        restaurant.setMenu(menu);
+        restaurant = repository.save(restaurant).block();
+
+        client.get()
+                .uri("/restaurants/" + restaurant.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void get() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("Mama mia");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("mama pizza");
+        pizza.setPrice(20.7);
+
+        MenuItem nugget = new MenuItem();
+        nugget.setName("nugget");
+        nugget.setPrice(10.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+        menu.add(nugget);
+
+        restaurant.setMenu(menu);
+        restaurant = repository.save(restaurant).block();
+
+        client.get()
+                .uri("/restaurants/" + restaurant.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json("{\"name\":\"Mama mia\",\"menu\":[{\"name\":\"mama pizza\",\"price\":20.7},{\"name\":\"nugget\",\"price\":10.7}]}");
     }
 }
