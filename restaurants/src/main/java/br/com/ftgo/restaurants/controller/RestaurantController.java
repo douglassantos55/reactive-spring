@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 @RestController
 @RequestMapping("/restaurants")
 public class RestaurantController {
@@ -47,5 +48,14 @@ public class RestaurantController {
             return restaurant;
         }).flatMap(repository::save);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Restaurant> delete(@PathVariable String id) {
+        return get(id)
+                .flatMap(restaurant -> {
+                    restaurant.setDeletedAt(Instant.now());
+                    return repository.save(restaurant);
+                });
     }
 }

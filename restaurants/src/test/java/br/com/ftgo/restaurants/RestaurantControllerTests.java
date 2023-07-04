@@ -436,4 +436,49 @@ public class RestaurantControllerTests {
                 .expectBody()
                 .json("{\"name\":\"Mama mia\",\"menu\":[{\"name\":\"mama pizza\",\"price\":20.7},{\"name\":\"nugget\",\"price\":10.7}]}");
     }
+
+    @Test
+    void deleteInvalid() {
+        client.delete()
+                .uri("/restaurants/15230")
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void deleteNonExistent() {
+        client.delete()
+                .uri("/restaurants/64a1bd217485272172fccb7d")
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void delete() {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName("Mama mia");
+
+        MenuItem pizza = new MenuItem();
+        pizza.setName("mama pizza");
+        pizza.setPrice(20.7);
+
+        MenuItem nugget = new MenuItem();
+        nugget.setName("nugget");
+        nugget.setPrice(10.7);
+
+        ArrayList<MenuItem> menu = new ArrayList<>();
+        menu.add(pizza);
+        menu.add(nugget);
+
+        restaurant.setMenu(menu);
+        restaurant = repository.save(restaurant).block();
+
+        client.delete()
+                .uri("/restaurants/" + restaurant.getId())
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+    }
 }
