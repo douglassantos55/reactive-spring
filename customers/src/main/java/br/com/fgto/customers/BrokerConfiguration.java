@@ -4,6 +4,8 @@ import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.amqp.CachingConnectionFactoryConfigurer;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,16 +25,18 @@ public class BrokerConfiguration {
 
     @Bean
     public Exchange customersExchange() {
-        return new TopicExchange("exchange.customers");
+        return new TopicExchange("notifications.exchange", true, false);
     }
 
     @Bean
-    public ConnectionFactory cachingConnectionFactory() {
-        CachingConnectionFactory factory = new CachingConnectionFactory(hostname, port);
+    public CachingConnectionFactoryConfigurer connectionFactoryConfigurer() {
+        RabbitProperties properties = new RabbitProperties();
 
-        factory.setUsername(username);
-        factory.setPassword(password);
+        properties.setHost(hostname);
+        properties.setPort(port);
+        properties.setUsername(username);
+        properties.setPassword(password);
 
-        return factory;
+        return new CachingConnectionFactoryConfigurer(properties);
     }
 }

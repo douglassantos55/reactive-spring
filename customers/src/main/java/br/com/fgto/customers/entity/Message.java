@@ -1,7 +1,10 @@
 package br.com.fgto.customers.entity;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
+
+import java.time.Instant;
 
 @Table(name = "messages")
 public class Message {
@@ -13,6 +16,11 @@ public class Message {
     private String routingKey;
 
     private String exchange;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    private Instant lastAttempt;
 
     public Long getId() {
         return id;
@@ -44,5 +52,21 @@ public class Message {
 
     public void setExchange(String exchange) {
         this.exchange = exchange;
+    }
+
+    public Instant getCreateAt() {
+        return createdAt;
+    }
+
+    public void setCreateAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getLastAttempt() {
+        return lastAttempt;
+    }
+
+    public void attempt() {
+        lastAttempt = Instant.now();
     }
 }

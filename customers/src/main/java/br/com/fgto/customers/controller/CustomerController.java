@@ -46,7 +46,7 @@ public class CustomerController {
         return repository.save(customer).flatMap(customer1 -> {
             Message message = new Message();
 
-            message.setExchange("exchange.customers");
+            message.setExchange("notifications.exchange");
             message.setRoutingKey("customer.created");
             message.setBody(new byte[]{customer1.getId().byteValue()});
 
@@ -77,11 +77,11 @@ public class CustomerController {
                 .flatMap(customer -> {
                     Message message = new Message();
 
-                    message.setExchange("exchange.customers");
+                    message.setExchange("notifications.exchange");
                     message.setRoutingKey("customer.deleted");
                     message.setBody(new byte[]{customer.getId().byteValue()});
 
-                    return messageRepository.save(message).map(result -> customer);
+                    return messageRepository.save(message).thenReturn(customer);
                 });
     }
 }
