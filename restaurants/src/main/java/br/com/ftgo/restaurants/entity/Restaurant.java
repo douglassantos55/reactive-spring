@@ -2,6 +2,7 @@ package br.com.ftgo.restaurants.entity;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -28,6 +29,10 @@ public class Restaurant {
     @Valid
     @NotEmpty
     private List<MenuItem> menu = new ArrayList<>();
+
+
+    @CreatedDate
+    private Instant createdAt;
 
     private Instant deletedAt;
 
@@ -87,6 +92,14 @@ public class Restaurant {
 
     public void setMenu(List<MenuItem> menu) {
         this.menu = menu;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 
     public Instant getDeletedAt() {
