@@ -1,6 +1,7 @@
 package br.com.fgto.customers.entity;
 
 import jakarta.validation.constraints.NotEmpty;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -19,6 +20,8 @@ public class Customer {
 
     private String deliveryAddress;
 
+    @CreatedDate
+    private Instant createdAt;
     private Instant deletedAt;
 
     public Long getId() {
@@ -55,6 +58,14 @@ public class Customer {
 
     public void setDeliveryAddress(String address) {
         this.deliveryAddress = address;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 
     public Instant getDeletedAt() {

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS customers (
     name VARCHAR(255) NOT NULL,
     billing_address VARCHAR(255) NOT NULL,
     delivery_address VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT NULL,
     deleted_at TIMESTAMP DEFAULT NULL
 );
 
@@ -11,5 +12,6 @@ CREATE TABLE IF NOT EXISTS messages (
     routing_key VARCHAR(104) NOT NULL,
     exchange VARCHAR(100) NOT NULL,
     body BYTEA NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_attempt TIMESTAMP DEFAULT NULL
 );
