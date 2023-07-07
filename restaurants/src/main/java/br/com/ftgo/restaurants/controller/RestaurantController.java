@@ -7,13 +7,17 @@ import br.com.ftgo.restaurants.repository.MessageRepository;
 import br.com.ftgo.restaurants.repository.RestaurantRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/restaurants")
@@ -23,6 +27,9 @@ public class RestaurantController {
 
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private DataBufferFactory bufferFactory;
 
     @GetMapping
     public Flux<Restaurant> list() {
@@ -39,16 +46,34 @@ public class RestaurantController {
     @PostMapping
     @Transactional
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Restaurant> create(@RequestBody @Valid Restaurant restaurant) {
-        return repository.save(restaurant).flatMap(result -> {
-            Message message = new Message();
+    public Mono<Restaurant> create(@Valid Restaurant restaurant, @RequestPart(required = false) Mono<FilePart> logoFile) {
+        return logoFile
+                .map(file -> file.content().defaultIfEmpty(bufferFactory.allocateBuffer(0)))
+                .flatMap(bufferFlux -> bufferFlux.collect(
+                        Collectors.reducing(
+                                new byte[]{},
+                                buffer -> buffer.asByteBuffer().array(),
+                                (bytes, acc) -> {
+                                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-            message.setKey("restaurant.created");
-            message.setExchange("notifications.exchange");
-            message.setBody(result.getId().getBytes());
+                                    stream.writeBytes(bytes);
+                                    stream.writeBytes(acc);
 
-            return messageRepository.save(message).thenReturn(result);
-        });
+                                    return stream.toByteArray();
+                                })
+                ))
+                .doOnNext(bytes -> restaurant.setLogo(bytes))
+                .thenReturn(restaurant)
+                .flatMap(repository::save)
+                .flatMap(result -> {
+                    Message message = new Message();
+
+                    message.setKey("restaurant.created");
+                    message.setExchange("notifications.exchange");
+                    message.setBody(result.getId().getBytes());
+
+                    return messageRepository.save(message).thenReturn(result);
+                });
     }
 
     @PutMapping("/{id}")

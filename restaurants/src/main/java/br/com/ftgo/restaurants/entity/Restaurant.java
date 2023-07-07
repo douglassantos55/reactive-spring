@@ -26,10 +26,11 @@ public class Restaurant {
 
     private String description;
 
+    private byte[] logo;
+
     @Valid
     @NotEmpty
     private List<MenuItem> menu = new ArrayList<>();
-
 
     @CreatedDate
     private Instant createdAt;
@@ -116,5 +117,13 @@ public class Restaurant {
 
     public void setBlocked(boolean blocked) {
         this.blocked = blocked;
+    }
+
+    public void setLogo(byte[] logo) {
+        this.logo = logo;
+    }
+
+    public byte[] getLogo() {
+        return logo;
     }
 }
