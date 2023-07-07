@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.time.Instant;
@@ -29,64 +31,55 @@ public class RestaurantControllerTests {
 
     @Test
     void createWithoutMenu() {
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName("kfc");
-        restaurant.setDescription("kentuky fried chicken");
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "kfc");
+        builder.part("description", "kentuky fried chicken");
 
         client.post()
                 .uri("/restaurants")
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(restaurant)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
                 .expectBody()
-                .json("{\"errors\":{\"menu\":\"must not be empty\"}}");
+                .jsonPath("errors.menu").isEqualTo("must not be empty");
     }
 
     @Test
     void createWithMenu() {
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName("mcdonalds");
-
-        MenuItem bigMac = new MenuItem();
-        bigMac.setName("bigmac");
-        bigMac.setPrice(5.25);
-
-        ArrayList<MenuItem> menu = new ArrayList<>();
-        menu.add(bigMac);
-        restaurant.setMenu(menu);
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "mcdonalds");
+        builder.part("menu[0].name", "bigmac");
+        builder.part("menu[0].price", "5.25");
 
         client.post()
                 .uri("/restaurants")
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(restaurant)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isCreated()
                 .expectBody()
-                .json("{\"name\":\"mcdonalds\",\"description\":null,\"menu\":[{\"name\":\"bigmac\",\"price\":5.25}]}");
+                .jsonPath("name").isEqualTo("mcdonalds")
+                .jsonPath("description").isEqualTo(null)
+                .jsonPath("menu[0].name").isEqualTo("bigmac")
+                .jsonPath("menu[0].price").isEqualTo(5.25);
     }
 
     @Test
     void createMenuWithoutName() {
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName("PizzaHut");
-
-        MenuItem miniPizza = new MenuItem();
-        miniPizza.setPrice(0.35);
-
-        ArrayList<MenuItem> menu = new ArrayList<>();
-        menu.add(miniPizza);
-        restaurant.setMenu(menu);
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "PizzaHut");
+        builder.part("menu[0].price", "0.35");
 
         client.post()
                 .uri("/restaurants")
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(restaurant)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
@@ -96,26 +89,63 @@ public class RestaurantControllerTests {
 
     @Test
     void createMenuWithoutPrice() {
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName("PizzaHut");
-
-        MenuItem miniPizza = new MenuItem();
-        miniPizza.setName("mini pizza");
-
-        ArrayList<MenuItem> menu = new ArrayList<>();
-        menu.add(miniPizza);
-        restaurant.setMenu(menu);
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "PizzaHut");
+        builder.part("menu[0].name", "mini pizza");
 
         client.post()
                 .uri("/restaurants")
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(restaurant)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isCreated()
                 .expectBody()
-                .json("{\"name\":\"PizzaHut\",\"menu\":[{\"name\":\"mini pizza\",\"price\":0}]}");
+                .jsonPath("name").isEqualTo("PizzaHut")
+                .jsonPath("menu[0].name").isEqualTo("mini pizza")
+                .jsonPath("menu[0].price").isEqualTo(0.0);
+    }
+
+    @Test
+    void createWithLogo() {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "McDonalds");
+        builder.part("menu[0].name", "burger");
+        builder.part("menu[0].price", "30.5");
+        builder.part("logoFile", new ClassPathResource("/test.txt", RestaurantControllerTests.class));
+
+        client.post()
+                .uri("/restaurants")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(builder.build())
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectBody()
+                .jsonPath("logo")
+                .isNotEmpty();
+    }
+
+    @Test
+    void createWithoutLogo() {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "McDonalds");
+        builder.part("menu[0].name", "mcburger");
+        builder.part("menu[0].price", "50.5");
+
+        client.post()
+                .uri("/restaurants")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(builder.build())
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectBody()
+                .jsonPath("name").isEqualTo("McDonalds")
+                .jsonPath("logo").isEqualTo(null);
     }
 
     @Test
