@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @RestController
@@ -77,18 +78,38 @@ public class RestaurantController {
     }
 
     @PutMapping("/{id}")
-    public Mono<Restaurant> update(@PathVariable String id, @RequestBody @Valid Restaurant data) {
-        return get(id).map(restaurant -> {
-            restaurant.setName(data.getName());
-            restaurant.setDescription(data.getDescription());
-            restaurant.setMenu(data.getMenu());
-            restaurant.setBlocked(data.isBlocked());
-            restaurant.setAddress(data.getAddress());
-            restaurant.setPhone(data.getPhone());
-            restaurant.setWorkingHours(data.getWorkingHours());
+    public Mono<Restaurant> update(@Valid Restaurant data, @PathVariable String id, @RequestPart(required = false) Mono<FilePart> logoFile) {
+        return get(id)
+                .flatMap(restaurant ->
+                    logoFile
+                            .map(file -> file.content().defaultIfEmpty(bufferFactory.allocateBuffer(0)))
+                            .flatMap(bufferFlux -> bufferFlux.collect(
+                                    Collectors.reducing(
+                                            new byte[]{},
+                                            buffer -> buffer.asByteBuffer().array(),
+                                            (bytes, acc) -> {
+                                                ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-            return restaurant;
-        }).flatMap(repository::save);
+                                                stream.writeBytes(bytes);
+                                                stream.writeBytes(acc);
+
+                                                return stream.toByteArray();
+                                            })
+                            ))
+                            .doOnNext(bytes -> restaurant.setLogo(bytes))
+                            .thenReturn(restaurant)
+                )
+                .map(restaurant -> {
+                    restaurant.setName(data.getName());
+                    restaurant.setDescription(data.getDescription());
+                    restaurant.setMenu(data.getMenu());
+                    restaurant.setBlocked(data.isBlocked());
+                    restaurant.setAddress(data.getAddress());
+                    restaurant.setPhone(data.getPhone());
+                    restaurant.setWorkingHours(data.getWorkingHours());
+
+                    return restaurant;
+                }).flatMap(repository::save);
     }
 
     @Transactional

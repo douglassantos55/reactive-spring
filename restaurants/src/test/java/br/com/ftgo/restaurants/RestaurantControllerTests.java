@@ -15,6 +15,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 
 @SpringBootTest
 public class RestaurantControllerTests {
@@ -195,23 +196,16 @@ public class RestaurantControllerTests {
 
     @Test
     void updateInvalid() {
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName("pizzeria");
-
-        MenuItem pizza = new MenuItem();
-        pizza.setName("generic pizza");
-        pizza.setPrice(0.7);
-
-        ArrayList<MenuItem> menu = new ArrayList<>();
-        menu.add(pizza);
-
-        restaurant.setMenu(menu);
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "pizzeria");
+        builder.part("menu[0].name", "generic pizza");
+        builder.part("menu[0].price", "0.7");
 
         client.put()
                 .uri("/restaurants/15253")
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(restaurant)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isNotFound();
@@ -219,23 +213,16 @@ public class RestaurantControllerTests {
 
     @Test
     void updateNotFound() {
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName("generic restaurant");
-
-        MenuItem item = new MenuItem();
-        item.setName("generic food");
-        item.setPrice(0.1);
-
-        ArrayList<MenuItem> menu = new ArrayList<>();
-        menu.add(item);
-
-        restaurant.setMenu(menu);
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "generic restaurant");
+        builder.part("menu[0].name", "generic food");
+        builder.part("menu[0].price", "0.1");
 
         client.put()
                 .uri("/restaurants/64a0b15c1f41eb7cc6d707d9")
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(restaurant)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isNotFound();
@@ -256,20 +243,20 @@ public class RestaurantControllerTests {
         restaurant.setMenu(menu);
         restaurant = repository.save(restaurant).block();
 
-        Restaurant updated = new Restaurant();
-        updated.setName("updated");
-        updated.setDescription("no more mama mia");
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "updated");
+        builder.part("description", "no more mama mia");
 
         client.put()
                 .uri("/restaurants/" + restaurant.getId())
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(updated)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
                 .expectBody()
-                .json("{\"errors\":{\"menu\":\"must not be empty\"}}");
+                .jsonPath("errors.menu").isEqualTo("must not be empty");
     }
 
     @Test
@@ -287,22 +274,16 @@ public class RestaurantControllerTests {
         restaurant.setMenu(menu);
         restaurant = repository.save(restaurant).block();
 
-        Restaurant updated = new Restaurant();
-        updated.setName("updated");
-        updated.setDescription("no more mama mia");
-
-        MenuItem nameless = new MenuItem();
-        nameless.setPrice(10.7);
-
-        ArrayList<MenuItem> updatedMenu = new ArrayList<>();
-        updatedMenu.add(nameless);
-        updated.setMenu(updatedMenu);
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "updated");
+        builder.part("description", "no more mama mia");
+        builder.part("menu[0].price", "10.7");
 
         client.put()
                 .uri("/restaurants/" + restaurant.getId())
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(updated)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
@@ -325,48 +306,41 @@ public class RestaurantControllerTests {
         restaurant.setMenu(menu);
         restaurant = repository.save(restaurant).block();
 
-        Restaurant updated = new Restaurant();
-        updated.setName("updated");
-        updated.setBlocked(true);
-        updated.setPhone("5 555 032273");
-        updated.setAddress("narnia");
-        updated.setWorkingHours("Monday to Friday - 19:00 to 23:00");
-        updated.setDescription("no more mama mia");
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("name", "updated");
+        builder.part("blocked", "true");
+        builder.part("phone", "5 555 032273");
+        builder.part("address", "narnia");
+        builder.part("workingHours", "Monday to Friday - 19:00 to 23:00");
+        builder.part("description", "no more mama mia");
+        builder.part("menu[0].name", "not nameless");
+        builder.part("menu[0].price", "10.7");
+        builder.part("menu[1].name", "chicken");
+        builder.part("menu[1].price", "7.55");
+        builder.part("logoFile", new ClassPathResource("/test.txt", RestaurantControllerTests.class));
 
-        MenuItem nameless = new MenuItem();
-        nameless.setName("not nameless");
-        nameless.setPrice(10.7);
-
-        MenuItem chicken = new MenuItem();
-        chicken.setName("chicken");
-        chicken.setPrice(7.55);
-
-        ArrayList<MenuItem> updatedMenu = new ArrayList<>();
-        updatedMenu.add(nameless);
-        updatedMenu.add(chicken);
-        updated.setMenu(updatedMenu);
+        System.out.println(Base64.getEncoder().encode("testing".getBytes()).toString());
 
         client.put()
                 .uri("/restaurants/" + restaurant.getId())
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(updated)
+                .bodyValue(builder.build())
                 .exchange()
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .json("{" +
-                        "\"name\":\"updated\"," +
-                        "\"phone\":\"5 555 032273\"," +
-                        "\"address\":\"narnia\"," +
-                        "\"blocked\":true," +
-                        "\"workingHours\":\"Monday to Friday - 19:00 to 23:00\"," +
-                        "\"description\":\"no more mama mia\"," +
-                        "\"menu\":[" +
-                            "{\"name\":\"not nameless\",\"price\":10.7}, " +
-                            "{\"name\":\"chicken\",\"price\":7.55}" +
-                        "]" +
-                "}");
+                .jsonPath("name").isEqualTo("updated")
+                .jsonPath("phone").isEqualTo("5 555 032273")
+                .jsonPath("address").isEqualTo("narnia")
+                .jsonPath("blocked").isEqualTo(true)
+                .jsonPath("workingHours").isEqualTo("Monday to Friday - 19:00 to 23:00")
+                .jsonPath("description").isEqualTo("no more mama mia")
+                .jsonPath("menu[0].name").isEqualTo("not nameless")
+                .jsonPath("menu[0].price").isEqualTo(10.7)
+                .jsonPath("menu[1].name").isEqualTo("chicken")
+                .jsonPath("menu[1].price").isEqualTo(7.55)
+                .jsonPath("logo").isNotEmpty();
     }
 
     @Test
