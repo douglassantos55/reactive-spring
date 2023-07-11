@@ -5,6 +5,8 @@ import br.com.ftgo.restaurants.entity.Restaurant;
 import br.com.ftgo.restaurants.exception.ResourceNotFoundException;
 import br.com.ftgo.restaurants.repository.MessageRepository;
 import br.com.ftgo.restaurants.repository.RestaurantRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -17,7 +19,6 @@ import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,6 +32,9 @@ public class RestaurantController {
 
     @Autowired
     private DataBufferFactory bufferFactory;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @GetMapping
     public Flux<Restaurant> list() {
@@ -67,13 +71,17 @@ public class RestaurantController {
                 .thenReturn(restaurant)
                 .flatMap(repository::save)
                 .flatMap(result -> {
-                    Message message = new Message();
+                    try {
+                        Message message = new Message();
 
-                    message.setKey("restaurant.created");
-                    message.setExchange("notifications.exchange");
-                    message.setBody(result.getId().getBytes());
+                        message.setKey("restaurant.created");
+                        message.setExchange("notifications.exchange");
+                        message.setBody(mapper.writeValueAsBytes(result));
 
-                    return messageRepository.save(message).thenReturn(result);
+                        return messageRepository.save(message).thenReturn(result);
+                    } catch (JsonProcessingException exception) {
+                        return Mono.error(exception);
+                    }
                 });
     }
 
@@ -112,13 +120,17 @@ public class RestaurantController {
                 })
                 .flatMap(repository::save)
                 .flatMap(result -> {
-                    Message message = new Message();
+                    try {
+                        Message message = new Message();
 
-                    message.setKey("restaurant.updated");
-                    message.setExchange("notifications.exchange");
-                    message.setBody(result.getId().getBytes());
+                        message.setKey("restaurant.updated");
+                        message.setExchange("notifications.exchange");
+                        message.setBody(mapper.writeValueAsBytes(result));
 
-                    return messageRepository.save(message).thenReturn(result);
+                        return messageRepository.save(message).thenReturn(result);
+                    } catch (JsonProcessingException exception) {
+                        return Mono.error(exception);
+                    }
                 });
     }
 
