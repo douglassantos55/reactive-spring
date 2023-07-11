@@ -109,7 +109,17 @@ public class RestaurantController {
                     restaurant.setWorkingHours(data.getWorkingHours());
 
                     return restaurant;
-                }).flatMap(repository::save);
+                })
+                .flatMap(repository::save)
+                .flatMap(result -> {
+                    Message message = new Message();
+
+                    message.setKey("restaurant.updated");
+                    message.setExchange("notifications.exchange");
+                    message.setBody(result.getId().getBytes());
+
+                    return messageRepository.save(message).thenReturn(result);
+                });
     }
 
     @Transactional
