@@ -5,6 +5,8 @@ import br.com.fgto.customers.repository.CustomerRepository;
 import br.com.fgto.customers.entity.Customer;
 import br.com.fgto.customers.entity.Message;
 import br.com.fgto.customers.repository.MessageRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class CustomerController {
     @Autowired
     private MessageRepository messageRepository;
 
+    @Autowired
+    private ObjectMapper mapper;
+
     @GetMapping
     public Flux<Customer> list() {
         return repository.findByDeletedAtIsNull();
@@ -44,13 +49,17 @@ public class CustomerController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Customer> create(@Valid @RequestBody Customer customer) {
         return repository.save(customer).flatMap(customer1 -> {
-            Message message = new Message();
+            try {
+                Message message = new Message();
 
-            message.setExchange("notifications.exchange");
-            message.setRoutingKey("customer.created");
-            message.setBody(new byte[]{customer1.getId().byteValue()});
+                message.setExchange("notifications.exchange");
+                message.setRoutingKey("customer.created");
+                message.setBody(mapper.writeValueAsBytes(customer1));
 
-            return messageRepository.save(message).thenReturn(customer1);
+                return messageRepository.save(message).thenReturn(customer1);
+            } catch (JsonProcessingException exception) {
+                return Mono.error(exception);
+            }
         });
     }
 
@@ -75,13 +84,17 @@ public class CustomerController {
                     return repository.save(customer);
                 })
                 .flatMap(customer -> {
-                    Message message = new Message();
+                    try {
+                        Message message = new Message();
 
-                    message.setExchange("notifications.exchange");
-                    message.setRoutingKey("customer.deleted");
-                    message.setBody(new byte[]{customer.getId().byteValue()});
+                        message.setExchange("notifications.exchange");
+                        message.setRoutingKey("customer.deleted");
+                        message.setBody(mapper.writeValueAsBytes(customer));
 
-                    return messageRepository.save(message).thenReturn(customer);
+                        return messageRepository.save(message).thenReturn(customer);
+                    } catch (JsonProcessingException exception) {
+                        return Mono.error(exception);
+                    }
                 });
     }
 }
