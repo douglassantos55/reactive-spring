@@ -65,13 +65,28 @@ public class CustomerController {
 
     @PutMapping("/{id}")
     public Mono<Customer> update(@PathVariable Long id, @Valid @RequestBody Customer data) {
-        return get(id).map(customer -> {
-            customer.setName(data.getName());
-            customer.setBillingAddress(data.getBillingAddress());
-            customer.setDeliveryAddress(data.getDeliveryAddress());
+        return get(id)
+                .map(customer -> {
+                    customer.setName(data.getName());
+                    customer.setBillingAddress(data.getBillingAddress());
+                    customer.setDeliveryAddress(data.getDeliveryAddress());
 
-            return customer;
-        }).flatMap(repository::save);
+                    return customer;
+                })
+                .flatMap(repository::save)
+                .flatMap(customer -> {
+                    try {
+                        Message message = new Message();
+
+                        message.setExchange("notifications.exchange");
+                        message.setRoutingKey("customer.updated");
+                        message.setBody(mapper.writeValueAsBytes(customer));
+
+                        return messageRepository.save(message).thenReturn(customer);
+                    } catch (JsonProcessingException exception) {
+                        return Mono.error(exception);
+                    }
+                });
     }
 
     @DeleteMapping("/{id}")
