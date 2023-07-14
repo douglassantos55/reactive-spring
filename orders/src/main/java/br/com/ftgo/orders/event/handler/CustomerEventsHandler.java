@@ -21,6 +21,11 @@ public class CustomerEventsHandler {
                     exchange = @Exchange(name = "notifications.exchange", type = ExchangeTypes.TOPIC),
                     key = "customer.created"
             ),
+            @QueueBinding(
+                    value = @Queue(value = "orders.customer.created_updated", durable = "true"),
+                    exchange = @Exchange(name = "notifications.exchange", type = ExchangeTypes.TOPIC),
+                    key = "customer.updated"
+            )
     })
     public void handleCreated(Customer customer) {
         repository.save(customer).subscribe();
