@@ -1,6 +1,7 @@
 package br.com.fgto.customers;
 
 import io.r2dbc.spi.ConnectionFactory;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -23,5 +24,10 @@ public class ApplicationConfiguration {
         initializer.setDatabasePopulator(new ResourceDatabasePopulator(schema));
 
         return initializer;
+    }
+
+    @Bean
+    public Jackson2JsonMessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
     }
 }
