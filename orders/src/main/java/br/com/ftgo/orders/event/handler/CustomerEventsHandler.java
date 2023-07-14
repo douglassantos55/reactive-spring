@@ -30,4 +30,13 @@ public class CustomerEventsHandler {
     public void handleCreated(Customer customer) {
         repository.save(customer).subscribe();
     }
+
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(value = "orders.customer.deleted", durable = "true"),
+            exchange = @Exchange(name = "notifications.exchange", type = ExchangeTypes.TOPIC),
+            key = "customer.deleted"
+    ))
+    public void handleDeleted(Customer customer) {
+        repository.delete(customer).subscribe();
+    }
 }
