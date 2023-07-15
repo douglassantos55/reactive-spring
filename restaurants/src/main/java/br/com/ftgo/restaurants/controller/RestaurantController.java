@@ -144,13 +144,17 @@ public class RestaurantController {
                     return repository.save(restaurant);
                 })
                 .flatMap(restaurant -> {
-                    Message message = new Message();
+                    try {
+                        Message message = new Message();
 
-                    message.setKey("restaurant.deleted");
-                    message.setExchange("notifications.exchange");
-                    message.setBody(restaurant.getId().getBytes());
+                        message.setKey("restaurant.deleted");
+                        message.setExchange("notifications.exchange");
+                        message.setBody(mapper.writeValueAsBytes(restaurant));
 
-                    return messageRepository.save(message).thenReturn(restaurant);
+                        return messageRepository.save(message).thenReturn(restaurant);
+                    } catch (JsonProcessingException exception) {
+                        return Mono.error(exception);
+                    }
                 });
     }
 }
