@@ -22,6 +22,8 @@ public class Order {
     @NotEmpty
     private String restaurantId;
 
+    private OrderStatus status = OrderStatus.PENDING;
+
     @Valid
     @NotEmpty
     private List<OrderItem> items = new ArrayList<>();
@@ -60,5 +62,13 @@ public class Order {
 
     public void addItem(OrderItem item) {
         items.add(item);
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
     }
 }

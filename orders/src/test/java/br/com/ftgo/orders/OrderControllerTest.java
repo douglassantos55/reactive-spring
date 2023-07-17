@@ -280,4 +280,49 @@ public class OrderControllerTest {
                 .jsonPath("errors.restaurantId").doesNotExist()
                 .jsonPath("errors.customerId").doesNotExist();
     }
+
+    @Test
+    void create() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        OrderItem item = new OrderItem();
+        item.setQty(1);
+        item.setPrice(305);
+        item.setDescription("item");
+
+        ArrayList<OrderItem> items = new ArrayList<>();
+        items.add(item);
+
+        Order order = new Order();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setItems(items);
+
+        client.post()
+                .uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(order)
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectBody()
+                .jsonPath("errors").doesNotExist()
+                .jsonPath("customerId").isEqualTo(1L)
+                .jsonPath("restaurantId").isEqualTo("mcdonalds")
+                .jsonPath("status").isEqualTo("PENDING")
+                .jsonPath("items.*.description").isEqualTo("item")
+                .jsonPath("items.*.price").isEqualTo(305.0)
+                .jsonPath("items.*.qty").isEqualTo(1);
+    }
 }
