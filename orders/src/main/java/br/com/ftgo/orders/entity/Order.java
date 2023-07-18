@@ -73,6 +73,10 @@ public class Order {
         items.add(item);
     }
 
+    public boolean isCancelled() {
+        return status == OrderStatus.CANCELLED;
+    }
+
     public OrderStatus getStatus() {
         return status;
     }

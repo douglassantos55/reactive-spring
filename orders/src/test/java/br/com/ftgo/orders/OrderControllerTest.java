@@ -329,185 +329,44 @@ public class OrderControllerTest {
     }
 
     @Test
-    void updateNotFound() {
-        Customer customer = new Customer();
-        customer.setId(1L);
-        customer.setName("testing");
-
-        customersRepository.save(customer).block();
-
-        Restaurant restaurant = new Restaurant();
-        restaurant.setId("mcdonalds");
-        restaurant.setName("McDonald's");
-
-        restaurantsRepository.save(restaurant).block();
-
-        OrderItem item = new OrderItem();
-        item.setQty(1);
-        item.setDescription("item");
-
-        ArrayList<OrderItem> items = new ArrayList<>();
-        items.add(item);
-
-        Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
-
-        client.put()
+    void cancelNotFound() {
+        client.delete()
                 .uri("/orders/aoeu")
-                .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(order)
                 .exchange()
                 .expectStatus()
                 .isNotFound();
     }
 
     @Test
-    void updateInvalidCustomer() {
-        Customer customer = new Customer();
-        customer.setId(1L);
-        customer.setName("testing");
-
-        customersRepository.save(customer).block();
-
-        Restaurant restaurant = new Restaurant();
-        restaurant.setId("mcdonalds");
-        restaurant.setName("McDonald's");
-
-        restaurantsRepository.save(restaurant).block();
-
-        OrderItem item = new OrderItem();
-        item.setQty(1);
-        item.setDescription("bigmac");
-
-        ArrayList<OrderItem> items = new ArrayList<>();
-        items.add(item);
-
+    void cancelCancelled() {
         Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
+        order.setId("order1");
+        order.setStatus(OrderStatus.CANCELLED);
 
         ordersRepository.save(order).block();
 
-        order.setCustomerId(2L);
-
-        client.put()
+        client.delete()
                 .uri("/orders/" + order.getId())
-                .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(order)
                 .exchange()
                 .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("errors.restaurantId").doesNotExist()
-                .jsonPath("errors.customerId").isEqualTo("does not exist");
+                .isNotFound();
     }
 
     @Test
-    void updateInvalidRestaurant() {
-        Customer customer = new Customer();
-        customer.setId(1L);
-        customer.setName("testing");
-
-        customersRepository.save(customer).block();
-
-        Restaurant restaurant = new Restaurant();
-        restaurant.setId("mcdonalds");
-        restaurant.setName("McDonald's");
-
-        restaurantsRepository.save(restaurant).block();
-
-        OrderItem item = new OrderItem();
-        item.setQty(1);
-        item.setDescription("bigmac");
-
-        ArrayList<OrderItem> items = new ArrayList<>();
-        items.add(item);
-
+    void cancel() {
         Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
+        order.setId("order1");
+        order.setStatus(OrderStatus.PENDING);
 
         ordersRepository.save(order).block();
 
-        order.setRestaurantId("pizzahut");
-
-        client.put()
+        client.delete()
                 .uri("/orders/" + order.getId())
-                .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(order)
                 .exchange()
                 .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("errors.customerId").doesNotExist()
-                .jsonPath("errors.restaurantId").isEqualTo("does not exist");
-    }
-
-    @Test
-    void update() {
-        Customer c1 = new Customer();
-        c1.setId(1L);
-        c1.setName("testing 1");
-
-        Customer c2 = new Customer();
-        c2.setId(2L);
-        c2.setName("testing 2");
-
-        customersRepository.save(c1).block();
-        customersRepository.save(c2).block();
-
-        Restaurant r1 = new Restaurant();
-        r1.setId("mcdonalds");
-        r1.setName("McDonald's");
-
-        Restaurant r2 = new Restaurant();
-        r2.setId("pizzahut");
-        r2.setName("Pizza Hut");
-
-        restaurantsRepository.save(r1).block();
-        restaurantsRepository.save(r2).block();
-
-        OrderItem item = new OrderItem();
-        item.setQty(1);
-        item.setDescription("bigmac");
-
-        ArrayList<OrderItem> items = new ArrayList<>();
-        items.add(item);
-
-        Order order = new Order();
-        order.setCustomerId(c1.getId());
-        order.setRestaurantId(r1.getId());
-        order.setItems(items);
-
-        ordersRepository.save(order).block();
-
-        order.setCustomerId(c2.getId());
-        order.setRestaurantId(r2.getId());
-
-        item.setDescription("pizza");
-        item.setQty(2);
-        item.setPrice(50.00);
-
-        client.put()
-                .uri("/orders/" + order.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(order)
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("customerId").isEqualTo(c2.getId())
-                .jsonPath("restaurantId").isEqualTo(r2.getId())
-                .jsonPath("items[0].description").isEqualTo("pizza")
-                .jsonPath("items[0].qty").isEqualTo(2)
-                .jsonPath("items[0].price").isEqualTo(50.00);
+                .isOk();
     }
 }

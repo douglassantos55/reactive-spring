@@ -2,7 +2,9 @@ package br.com.ftgo.orders.controller;
 
 import br.com.ftgo.orders.entity.Message;
 import br.com.ftgo.orders.entity.Order;
+import br.com.ftgo.orders.entity.OrderStatus;
 import br.com.ftgo.orders.exception.RelationMissingException;
+import br.com.ftgo.orders.exception.ResourceNotFoundException;
 import br.com.ftgo.orders.repository.CustomersRepository;
 import br.com.ftgo.orders.repository.MessagesRepository;
 import br.com.ftgo.orders.repository.OrdersRepository;
@@ -67,6 +69,32 @@ public class OrderController {
                         Message message = new Message();
 
                         message.setRoutingKey("order.created");
+                        message.setExchange("notifications.exchange");
+                        message.setBody(mapper.writeValueAsBytes(order));
+
+                        return messagesRepository.save(message).thenReturn(order);
+                    } catch (JsonProcessingException exception) {
+                        return Mono.error(exception);
+                    }
+                });
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public Mono<Order> cancel(@PathVariable String id) {
+        return repository.findById(id)
+                .filter(order -> !order.isCancelled())
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException(Order.class, id)))
+                .map(order -> {
+                    order.setStatus(OrderStatus.CANCELLED);
+                    return order;
+                })
+                .flatMap(repository::save)
+                .flatMap(order -> {
+                    try {
+                        Message message = new Message();
+
+                        message.setRoutingKey("order.cancelled");
                         message.setExchange("notifications.exchange");
                         message.setBody(mapper.writeValueAsBytes(order));
 
