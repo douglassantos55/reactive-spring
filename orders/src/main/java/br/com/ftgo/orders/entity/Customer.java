@@ -15,6 +15,9 @@ public class Customer {
     @NotEmpty
     private String name;
 
+    @NotEmpty
+    private String billingAddress;
+
     public Long getId() {
         return id;
     }
@@ -29,5 +32,13 @@ public class Customer {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getBillingAddress() {
+        return billingAddress;
+    }
+
+    public void setBillingAddress(String billingAddress) {
+        this.billingAddress = billingAddress;
     }
 }
