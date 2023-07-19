@@ -16,6 +16,9 @@ public class Customer {
     private String name;
 
     @NotEmpty
+    private String document;
+
+    @NotEmpty
     private String billingAddress;
 
     public Long getId() {
@@ -40,5 +43,13 @@ public class Customer {
 
     public void setBillingAddress(String billingAddress) {
         this.billingAddress = billingAddress;
+    }
+
+    public String getDocument() {
+        return document;
+    }
+
+    public void setDocument(String document) {
+        this.document = document;
     }
 }
