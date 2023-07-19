@@ -1,5 +1,6 @@
 package br.com.ftgo.orders.controller;
 
+import br.com.ftgo.orders.dto.OrderDTO;
 import br.com.ftgo.orders.entity.Message;
 import br.com.ftgo.orders.entity.Order;
 import br.com.ftgo.orders.entity.OrderStatus;
@@ -39,19 +40,19 @@ public class OrderController {
     @PostMapping
     @Transactional
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Order> create(@RequestBody @Valid Mono<Order> request) {
+    public Mono<Order> create(@RequestBody @Valid Mono<OrderDTO> request) {
         RelationMissingException errors = new RelationMissingException();
 
         return request
                 .delayUntil(order ->
-                    customersRepository.existsById(order.getCustomerId()).doOnNext(found -> {
+                    customersRepository.existsById(order.customerId()).doOnNext(found -> {
                         if (!found) {
                             errors.addError("customerId");
                         }
                     })
                 )
                 .delayUntil(order ->
-                    restaurantsRepository.existsById(order.getRestaurantId()).doOnNext(found -> {
+                    restaurantsRepository.existsById(order.restaurantId()).doOnNext(found -> {
                         if (!found) {
                             errors.addError("restaurantId");
                         }
@@ -61,7 +62,7 @@ public class OrderController {
                     if (errors.hasErrors()) {
                         return Mono.error(errors);
                     }
-                    return Mono.just(order);
+                    return Mono.just(Order.from(order));
                 })
                 .flatMap(repository::save)
                 .flatMap(order -> {

@@ -1,5 +1,7 @@
 package br.com.ftgo.orders;
 
+import br.com.ftgo.orders.dto.CardInformation;
+import br.com.ftgo.orders.dto.OrderDTO;
 import br.com.ftgo.orders.entity.*;
 import br.com.ftgo.orders.repository.CustomersRepository;
 import br.com.ftgo.orders.repository.OrdersRepository;
@@ -51,9 +53,13 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        Order order = new Order();
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
+        OrderDTO order = new OrderDTO(
+                null,
+                restaurant.getId(),
+                "pix",
+                null,
+                items
+        );
 
         client.post()
                 .uri("/orders")
@@ -84,9 +90,13 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setItems(items);
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                "",
+                "pix",
+                null,
+                items
+        );
 
         client.post()
                 .uri("/orders")
@@ -117,10 +127,13 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId("aoeu");
-        order.setItems(items);
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                "aoeu",
+                "pix",
+                null,
+                items
+        );
 
         client.post()
                 .uri("/orders")
@@ -151,10 +164,13 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        Order order = new Order();
-        order.setCustomerId(1L);
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
+        OrderDTO order = new OrderDTO(
+                1L,
+                restaurant.getId(),
+                "pix",
+                null,
+                items
+        );
 
         client.post()
                 .uri("/orders")
@@ -183,9 +199,13 @@ public class OrderControllerTest {
 
         restaurantsRepository.save(restaurant).block();
 
-        Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId(restaurant.getId());
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                restaurant.getId(),
+                "pix",
+                null,
+                null
+        );
 
         client.post()
                 .uri("/orders")
@@ -223,10 +243,13 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                restaurant.getId(),
+                "pix",
+                null,
+                items
+        );
 
         client.post()
                 .uri("/orders")
@@ -262,10 +285,13 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                restaurant.getId(),
+                "pix",
+                null,
+                items
+        );
 
         client.post()
                 .uri("/orders")
@@ -279,6 +305,138 @@ public class OrderControllerTest {
                 .jsonPath("$['errors']['items.0.description']").isEqualTo("must not be empty")
                 .jsonPath("errors.restaurantId").doesNotExist()
                 .jsonPath("errors.customerId").doesNotExist();
+    }
+
+    @Test
+    void createNoCreditCard() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        OrderItem item = new OrderItem();
+        item.setQty(1);
+        item.setPrice(30.0);
+        item.setDescription("item");
+
+        ArrayList<OrderItem> items = new ArrayList<>();
+        items.add(item);
+
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                restaurant.getId(),
+                "cc",
+                new CardInformation("", "", "", "0"),
+                items
+        );
+
+        client.post()
+                .uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(order)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$['errors']['card.number']").isEqualTo("invalid credit card number")
+                .jsonPath("$['errors']['card.holderName']").isEqualTo("must not be empty")
+                .jsonPath("$['errors']['card.cvv']").isEqualTo("size must be between 3 and 4")
+                .jsonPath("$['errors']['card.expDate']").isEqualTo("must not be empty");
+    }
+
+    @Test
+    void createInvalidCardNumber() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        OrderItem item = new OrderItem();
+        item.setQty(1);
+        item.setPrice(30.0);
+        item.setDescription("item");
+
+        ArrayList<OrderItem> items = new ArrayList<>();
+        items.add(item);
+
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                restaurant.getId(),
+                "cc",
+                new CardInformation("4129-9939-1834-8256", "Owen Hansen", "03/2023", "987"),
+                items
+        );
+
+        client.post()
+                .uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(order)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$['errors']['card.number']").isEqualTo("invalid credit card number")
+                .jsonPath("$['errors']['card.holderName']").doesNotExist()
+                .jsonPath("$['errors']['card.cvv']").doesNotExist()
+                .jsonPath("$['errors']['card.expDate']").doesNotExist();
+    }
+
+    @Test
+    void createCreditCard() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        OrderItem item = new OrderItem();
+        item.setQty(1);
+        item.setPrice(30.0);
+        item.setDescription("item");
+
+        ArrayList<OrderItem> items = new ArrayList<>();
+        items.add(item);
+
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                restaurant.getId(),
+                "cc",
+                new CardInformation("4129993918348255", "Owen Hansen", "03/2023", "987"),
+                items
+        );
+
+        client.post()
+                .uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(order)
+                .exchange()
+                .expectStatus()
+                .isCreated()
+                .expectBody()
+                .jsonPath("paymentType").isEqualTo("cc");
     }
 
     @Test
@@ -303,10 +461,13 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        Order order = new Order();
-        order.setCustomerId(customer.getId());
-        order.setRestaurantId(restaurant.getId());
-        order.setItems(items);
+        OrderDTO order = new OrderDTO(
+                customer.getId(),
+                restaurant.getId(),
+                "pix",
+                null,
+                items
+        );
 
         client.post()
                 .uri("/orders")

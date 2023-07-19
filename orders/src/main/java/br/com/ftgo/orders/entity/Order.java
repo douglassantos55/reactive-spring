@@ -1,5 +1,6 @@
 package br.com.ftgo.orders.entity;
 
+import br.com.ftgo.orders.dto.OrderDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +26,9 @@ public class Order {
     @NotEmpty
     private String restaurantId;
 
+    @NotEmpty
+    private String paymentType;
+
     private OrderStatus status = OrderStatus.PENDING;
 
     @Valid
@@ -36,6 +40,15 @@ public class Order {
 
     @LastModifiedDate
     private Instant updatedAt;
+
+    public static Order from(OrderDTO data) {
+        Order order = new Order();
+        order.setCustomerId(data.customerId());
+        order.setRestaurantId(data.restaurantId());
+        order.setItems(data.items());
+        order.setPaymentType(data.paymentType());
+        return order;
+    }
 
     public String getId() {
         return id;
@@ -99,5 +112,13 @@ public class Order {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(String paymentType) {
+        this.paymentType = paymentType;
     }
 }
