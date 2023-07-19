@@ -39,7 +39,9 @@ public class CustomerControllerTests {
                 .expectStatus()
                 .isBadRequest()
                 .expectBody()
-                .json("{\"errors\":{\"name\":\"must not be empty\",\"billingAddress\":\"must not be empty\"}}");
+                .jsonPath("errors.document").isEqualTo("must not be empty")
+                .jsonPath("errors.name").isEqualTo("must not be empty")
+                .jsonPath("errors.billingAddress").isEqualTo("must not be empty");
 
     }
 
@@ -47,6 +49,7 @@ public class CustomerControllerTests {
     void createNoDeliveryAddress() {
         Customer customer = new Customer();
         customer.setName("john doe");
+        customer.setDocument("830.139.280-00");
         customer.setBillingAddress("new york city");
 
         client.post()
@@ -65,6 +68,7 @@ public class CustomerControllerTests {
     void createWithDeliveryAddress() {
         Customer customer = new Customer();
         customer.setName("john doe");
+        customer.setDocument("830.139.280-00");
         customer.setBillingAddress("new york");
         customer.setDeliveryAddress("brooklyn");
 
@@ -81,20 +85,42 @@ public class CustomerControllerTests {
     }
 
     @Test
+    void createInvalidDocument() {
+        Customer customer = new Customer();
+        customer.setName("john doe");
+        customer.setDocument("830.139.280-10");
+        customer.setBillingAddress("new york");
+
+        client.post()
+                .uri("/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(customer)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("errors.document").isEqualTo("invalid document");
+    }
+
+    @Test
     void list() {
         Customer c1 = new Customer();
         c1.setName("john 1");
+        c1.setDocument("830.139.280-00");
         c1.setBillingAddress("san francisco");
         repository.save(c1).block();
 
         Customer c2 = new Customer();
         c2.setName("john 2");
+        c2.setDocument("614.041.370-25");
         c2.setBillingAddress("san francisco");
         c2.setDeliveryAddress("california");
         repository.save(c2).block();
 
         Customer c3 = new Customer();
         c3.setName("john 3");
+        c3.setDocument("670.788.270-82");
         c3.setBillingAddress("san francisco");
         c3.setDeliveryAddress("new york");
         c3.setDeletedAt(Instant.now());
@@ -135,6 +161,7 @@ public class CustomerControllerTests {
     void getExisting() {
         Customer customer = new Customer();
         customer.setName("john 1");
+        customer.setDocument("830.139.280-00");
         customer.setBillingAddress("san francisco");
 
         Customer created = repository.save(customer).block();
@@ -171,6 +198,7 @@ public class CustomerControllerTests {
     void deleteExisting() {
         Customer customer = new Customer();
         customer.setName("foobar");
+        customer.setDocument("830.139.280-00");
         customer.setBillingAddress("new york");
 
         Customer created = repository.save(customer).block();
@@ -195,6 +223,7 @@ public class CustomerControllerTests {
         Customer customer = new Customer();
         customer.setName("updating");
         customer.setBillingAddress("New Jersey");
+        customer.setDocument("830.139.280-00");
 
         client.put()
                 .uri("/customers/15777")
@@ -227,6 +256,7 @@ public class CustomerControllerTests {
         Customer customer = new Customer();
         customer.setName("updating");
         customer.setBillingAddress("New Jersey");
+        customer.setDocument("830.139.280-00");
 
         Customer created = repository.save(customer).block();
         System.out.println(created.getId());
@@ -235,6 +265,7 @@ public class CustomerControllerTests {
         data.setName("should be updated");
         data.setBillingAddress("nova iorque");
         data.setDeliveryAddress("italy");
+        data.setDocument("614.041.370-25");
 
         client.put()
                 .uri("/customers/" + created.getId())

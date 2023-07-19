@@ -1,6 +1,8 @@
 package br.com.fgto.customers.entity;
 
+import br.com.fgto.customers.validation.CpfCnpj;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
@@ -14,6 +16,10 @@ public class Customer {
 
     @NotEmpty
     private String name;
+
+    @NotEmpty
+    @CpfCnpj
+    private String document;
 
     @NotEmpty
     private String billingAddress;
@@ -74,5 +80,13 @@ public class Customer {
 
     public void setDeletedAt(Instant deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public String getDocument() {
+        return document;
+    }
+
+    public void setDocument(String document) {
+        this.document = document;
     }
 }

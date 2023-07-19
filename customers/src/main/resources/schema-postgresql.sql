@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS customers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    document VARCHAR(20) NOT NULL,
     billing_address VARCHAR(255) NOT NULL,
     delivery_address VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT NULL,
