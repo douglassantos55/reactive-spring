@@ -510,4 +510,32 @@ public class OrderControllerTest {
                 .expectStatus()
                 .isOk();
     }
+
+    @Test
+    void getNotFound() {
+        client.get()
+                .uri("/orders/someid")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void get() {
+        Order order = new Order();
+        order.setId("order1");
+        order.setStatus(OrderStatus.REFUNDED);
+
+        ordersRepository.save(order).block();
+
+        client.get()
+                .uri("/orders/" + order.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("status").isEqualTo("REFUNDED");
+    }
 }

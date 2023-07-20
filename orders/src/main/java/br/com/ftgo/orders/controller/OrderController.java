@@ -35,6 +35,13 @@ public class OrderController {
     @Autowired
     private ObjectMapper mapper;
 
+    @GetMapping("/{id}")
+    public Mono<Order> get(@PathVariable String id) {
+        return repository
+                .findById(id)
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException(Order.class, id)));
+    }
+
     @PostMapping
     @Transactional
     @ResponseStatus(HttpStatus.CREATED)
