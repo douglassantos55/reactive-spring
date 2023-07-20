@@ -39,7 +39,17 @@ public class OrderController {
     public Mono<Order> get(@PathVariable String id) {
         return repository
                 .findById(id)
-                .switchIfEmpty(Mono.error(new ResourceNotFoundException(Order.class, id)));
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException(Order.class, id)))
+                .flatMap(order ->
+                        customersRepository.findById(order.getCustomerId())
+                                .doOnNext(customer -> order.setCustomer(customer))
+                                .thenReturn(order)
+                )
+                .flatMap(order ->
+                        restaurantsRepository.findById(order.getRestaurantId())
+                                .doOnNext(restaurant -> order.setRestaurant(restaurant))
+                                .thenReturn(order)
+                );
     }
 
     @PostMapping
@@ -49,21 +59,23 @@ public class OrderController {
         RelationMissingException errors = new RelationMissingException();
 
         return request
-                .delayUntil(order ->
+                .flatMap(order ->
                         customersRepository
                                 .findById(order.getCustomerId())
                                 .doOnNext(customer -> order.setCustomer(customer))
                                 .switchIfEmpty(Mono.error(new ResourceNotFoundException(Customer.class, order.getCustomerId())))
                                 .doOnError(ResourceNotFoundException.class, e -> errors.addError("customerId"))
                                 .onErrorComplete()
+                                .thenReturn(order)
                 )
-                .delayUntil(order ->
+                .flatMap(order ->
                         restaurantsRepository
                                 .findById(order.getRestaurantId())
                                 .doOnNext(restaurant -> order.setRestaurant(restaurant))
                                 .switchIfEmpty(Mono.error(new ResourceNotFoundException(Restaurant.class, order.getRestaurantId())))
                                 .doOnError(ResourceNotFoundException.class, e -> errors.addError("restaurantId"))
                                 .onErrorComplete()
+                                .thenReturn(order)
                 )
                 .flatMap(order -> {
                     if (errors.hasErrors()) {

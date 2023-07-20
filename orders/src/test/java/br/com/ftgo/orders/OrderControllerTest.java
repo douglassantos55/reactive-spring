@@ -418,7 +418,9 @@ public class OrderControllerTest {
                 .expectStatus()
                 .isCreated()
                 .expectBody()
-                .jsonPath("paymentType").isEqualTo("cc");
+                .jsonPath("paymentType").isEqualTo("cc")
+                .jsonPath("customer").isNotEmpty()
+                .jsonPath("restaurant").isNotEmpty();
     }
 
     @Test
@@ -523,8 +525,22 @@ public class OrderControllerTest {
 
     @Test
     void get() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
         Order order = new Order();
         order.setId("order1");
+        order.setCustomerId(1L);
+        order.setRestaurantId("mcdonalds");
         order.setStatus(OrderStatus.REFUNDED);
 
         ordersRepository.save(order).block();
@@ -536,6 +552,8 @@ public class OrderControllerTest {
                 .expectStatus()
                 .isOk()
                 .expectBody()
-                .jsonPath("status").isEqualTo("REFUNDED");
+                .jsonPath("status").isEqualTo("REFUNDED")
+                .jsonPath("customer").isNotEmpty()
+                .jsonPath("restaurant").isNotEmpty();
     }
 }

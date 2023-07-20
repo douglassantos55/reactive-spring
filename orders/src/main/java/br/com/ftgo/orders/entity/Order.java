@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -21,9 +22,15 @@ public class Order {
     private String id;
 
     @NotNull
+    private Long customerId;
+
+    @Transient
     private Customer customer;
 
     @NotEmpty
+    private String restaurantId;
+
+    @Transient
     private Restaurant restaurant;
 
     @NotEmpty
@@ -45,6 +52,8 @@ public class Order {
         Order order = new Order();
         order.setCustomer(data.getCustomer());
         order.setRestaurant(data.getRestaurant());
+        order.setCustomerId(data.getCustomerId());
+        order.setRestaurantId(data.getRestaurantId());
         order.setItems(data.getItems());
         order.setPaymentType(data.getPaymentType());
         return order;
@@ -120,5 +129,21 @@ public class Order {
 
     public void setPaymentType(String paymentType) {
         this.paymentType = paymentType;
+    }
+
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
+
+    public String getRestaurantId() {
+        return restaurantId;
+    }
+
+    public void setRestaurantId(String restaurantId) {
+        this.restaurantId = restaurantId;
     }
 }
