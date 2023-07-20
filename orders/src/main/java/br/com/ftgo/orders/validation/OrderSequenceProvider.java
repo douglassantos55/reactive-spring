@@ -12,7 +12,7 @@ public class OrderSequenceProvider implements DefaultGroupSequenceProvider<Order
         List<Class<?>> groups = new ArrayList<>();
         groups.add(OrderDTO.class);
 
-        if (order != null && "cc".equals(order.paymentType())) {
+        if (order != null && "cc".equals(order.getPaymentType())) {
             groups.add(CardPayment.class);
         }
 

@@ -21,10 +21,10 @@ public class Order {
     private String id;
 
     @NotNull
-    private Long customerId;
+    private Customer customer;
 
     @NotEmpty
-    private String restaurantId;
+    private Restaurant restaurant;
 
     @NotEmpty
     private String paymentType;
@@ -43,10 +43,10 @@ public class Order {
 
     public static Order from(OrderDTO data) {
         Order order = new Order();
-        order.setCustomerId(data.customerId());
-        order.setRestaurantId(data.restaurantId());
-        order.setItems(data.items());
-        order.setPaymentType(data.paymentType());
+        order.setCustomer(data.getCustomer());
+        order.setRestaurant(data.getRestaurant());
+        order.setItems(data.getItems());
+        order.setPaymentType(data.getPaymentType());
         return order;
     }
 
@@ -58,20 +58,20 @@ public class Order {
         this.id = id;
     }
 
-    public void setCustomerId(Long id) {
-        customerId = id;
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 
-    public Long getCustomerId() {
-        return customerId;
+    public Customer getCustomer() {
+        return customer;
     }
 
-    public void setRestaurantId(String id) {
-        restaurantId = id;
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
     }
 
-    public String getRestaurantId() {
-        return restaurantId;
+    public Restaurant getRestaurant() {
+        return restaurant;
     }
 
     public List<OrderItem> getItems() {

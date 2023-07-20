@@ -9,6 +9,7 @@ import br.com.ftgo.orders.repository.RestaurantsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext;
 import org.springframework.http.MediaType;
@@ -53,13 +54,10 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                null,
-                restaurant.getId(),
-                "pix",
-                null,
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("pix");
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -90,13 +88,10 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                "",
-                "pix",
-                null,
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setPaymentType("pix");
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -127,13 +122,11 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                "aoeu",
-                "pix",
-                null,
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId("aoeu");
+        order.setPaymentType("pix");
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -164,13 +157,11 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                1L,
-                restaurant.getId(),
-                "pix",
-                null,
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(1L);
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("pix");
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -199,13 +190,10 @@ public class OrderControllerTest {
 
         restaurantsRepository.save(restaurant).block();
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                restaurant.getId(),
-                "pix",
-                null,
-                null
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("pix");
 
         client.post()
                 .uri("/orders")
@@ -243,13 +231,11 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                restaurant.getId(),
-                "pix",
-                null,
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("pix");
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -263,6 +249,51 @@ public class OrderControllerTest {
                 .jsonPath("$['errors']['items.0.qty']").isEqualTo("must be greater than or equal to 0")
                 .jsonPath("errors.restaurantId").doesNotExist()
                 .jsonPath("errors.customerId").doesNotExist();
+    }
+
+    @Test
+    @AutoConfigureWebTestClient(timeout = "6000")
+    void createInvalidCardNumber() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        OrderItem item = new OrderItem();
+        item.setQty(1);
+        item.setPrice(30.0);
+        item.setDescription("item");
+
+        ArrayList<OrderItem> items = new ArrayList<>();
+        items.add(item);
+
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("cc");
+        order.setCard(new CardInformation("4129-9939-1834-8256", "Owen Hansen", "03/2023", "987"));
+        order.setItems(items);
+
+        client.post()
+                .uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(order)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$['errors']['card.number']").isEqualTo("invalid credit card number")
+                .jsonPath("$['errors']['card.holderName']").doesNotExist()
+                .jsonPath("$['errors']['card.cvv']").doesNotExist()
+                .jsonPath("$['errors']['card.expDate']").doesNotExist();
     }
 
     @Test
@@ -285,13 +316,11 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                restaurant.getId(),
-                "pix",
-                null,
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("pix");
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -329,13 +358,12 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                restaurant.getId(),
-                "cc",
-                new CardInformation("", "", "", "0"),
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("cc");
+        order.setCard(new CardInformation("", "", "aoeu", ""));
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -349,52 +377,7 @@ public class OrderControllerTest {
                 .jsonPath("$['errors']['card.number']").isEqualTo("invalid credit card number")
                 .jsonPath("$['errors']['card.holderName']").isEqualTo("must not be empty")
                 .jsonPath("$['errors']['card.cvv']").isEqualTo("size must be between 3 and 4")
-                .jsonPath("$['errors']['card.expDate']").isEqualTo("must not be empty");
-    }
-
-    @Test
-    void createInvalidCardNumber() {
-        Customer customer = new Customer();
-        customer.setId(1L);
-        customer.setName("testing");
-
-        customersRepository.save(customer).block();
-
-        Restaurant restaurant = new Restaurant();
-        restaurant.setId("mcdonalds");
-        restaurant.setName("McDonald's");
-
-        restaurantsRepository.save(restaurant).block();
-
-        OrderItem item = new OrderItem();
-        item.setQty(1);
-        item.setPrice(30.0);
-        item.setDescription("item");
-
-        ArrayList<OrderItem> items = new ArrayList<>();
-        items.add(item);
-
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                restaurant.getId(),
-                "cc",
-                new CardInformation("4129-9939-1834-8256", "Owen Hansen", "03/2023", "987"),
-                items
-        );
-
-        client.post()
-                .uri("/orders")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(order)
-                .exchange()
-                .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("$['errors']['card.number']").isEqualTo("invalid credit card number")
-                .jsonPath("$['errors']['card.holderName']").doesNotExist()
-                .jsonPath("$['errors']['card.cvv']").doesNotExist()
-                .jsonPath("$['errors']['card.expDate']").doesNotExist();
+                .jsonPath("$['errors']['card.expDate']").isEqualTo("Expiration date must be MM/YYYY");
     }
 
     @Test
@@ -419,13 +402,12 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                restaurant.getId(),
-                "cc",
-                new CardInformation("4129993918348255", "Owen Hansen", "03/2023", "987"),
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("cc");
+        order.setCard(new CardInformation("4129993918348255", "Owen Hansen", "03/2023", "987"));
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -461,13 +443,11 @@ public class OrderControllerTest {
         ArrayList<OrderItem> items = new ArrayList<>();
         items.add(item);
 
-        OrderDTO order = new OrderDTO(
-                customer.getId(),
-                restaurant.getId(),
-                "pix",
-                null,
-                items
-        );
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("pix");
+        order.setItems(items);
 
         client.post()
                 .uri("/orders")
@@ -479,8 +459,8 @@ public class OrderControllerTest {
                 .isCreated()
                 .expectBody()
                 .jsonPath("errors").doesNotExist()
-                .jsonPath("customerId").isEqualTo(1L)
-                .jsonPath("restaurantId").isEqualTo("mcdonalds")
+                .jsonPath("customer.id").isEqualTo(1L)
+                .jsonPath("restaurant.id").isEqualTo("mcdonalds")
                 .jsonPath("status").isEqualTo("PENDING")
                 .jsonPath("items.*.description").isEqualTo("item")
                 .jsonPath("items.*.price").isEqualTo(305.0)

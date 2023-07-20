@@ -1,9 +1,7 @@
 package br.com.ftgo.orders.controller;
 
 import br.com.ftgo.orders.dto.OrderDTO;
-import br.com.ftgo.orders.entity.Message;
-import br.com.ftgo.orders.entity.Order;
-import br.com.ftgo.orders.entity.OrderStatus;
+import br.com.ftgo.orders.entity.*;
 import br.com.ftgo.orders.exception.RelationMissingException;
 import br.com.ftgo.orders.exception.ResourceNotFoundException;
 import br.com.ftgo.orders.repository.CustomersRepository;
@@ -45,25 +43,40 @@ public class OrderController {
 
         return request
                 .delayUntil(order ->
-                    customersRepository.existsById(order.customerId()).doOnNext(found -> {
-                        if (!found) {
-                            errors.addError("customerId");
-                        }
-                    })
+                        customersRepository
+                                .findById(order.getCustomerId())
+                                .doOnNext(customer -> order.setCustomer(customer))
+                                .switchIfEmpty(Mono.error(new ResourceNotFoundException(Customer.class, order.getCustomerId())))
+                                .doOnError(ResourceNotFoundException.class, e -> errors.addError("customerId"))
+                                .onErrorComplete()
                 )
                 .delayUntil(order ->
-                    restaurantsRepository.existsById(order.restaurantId()).doOnNext(found -> {
-                        if (!found) {
-                            errors.addError("restaurantId");
-                        }
-                    })
+                        restaurantsRepository
+                                .findById(order.getRestaurantId())
+                                .doOnNext(restaurant -> order.setRestaurant(restaurant))
+                                .switchIfEmpty(Mono.error(new ResourceNotFoundException(Restaurant.class, order.getRestaurantId())))
+                                .doOnError(ResourceNotFoundException.class, e -> errors.addError("restaurantId"))
+                                .onErrorComplete()
                 )
                 .flatMap(order -> {
                     if (errors.hasErrors()) {
                         return Mono.error(errors);
                     }
-                    return Mono.just(Order.from(order));
+                    return Mono.just(order);
                 })
+                .flatMap(order -> {
+                    try {
+                        Message message = new Message();
+                        message.setExchange("payment.exchange");
+                        message.setRoutingKey("payment.process");
+                        message.setBody(mapper.writeValueAsBytes(order));
+
+                        return messagesRepository.save(message).thenReturn(order);
+                    } catch (JsonProcessingException exception) {
+                        return Mono.error(exception);
+                    }
+                })
+                .map(order -> Order.from(order))
                 .flatMap(repository::save)
                 .flatMap(order -> {
                     try {
@@ -105,6 +118,5 @@ public class OrderController {
                     }
                 });
     }
-                .flatMap(repository::save);
     }
 }
