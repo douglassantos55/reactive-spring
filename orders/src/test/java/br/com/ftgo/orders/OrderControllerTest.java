@@ -556,4 +556,199 @@ public class OrderControllerTest {
                 .jsonPath("customer").isNotEmpty()
                 .jsonPath("restaurant").isNotEmpty();
     }
+
+    @Test
+    void listNoMatchRestaurantFilter() {
+        client.get()
+                .uri("/orders?restaurantId=mcdonalds")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectBody()
+                .json("[]");
+    }
+
+    @Test
+    void listNoMatchStatusFilter() {
+        client.get()
+                .uri("/orders?status=PENDING")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectBody()
+                .json("[]");
+    }
+
+    @Test
+    void listInvalidStatusFilter() {
+        client.get()
+                .uri("/orders?status=TRANSCENDED")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+    }
+
+    @Test
+    void listEmptyNoFilters() {
+        client.get()
+                .uri("/orders")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectBody()
+                .json("[]");
+    }
+
+    @Test
+    void listNoFilters() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        Order order1 = new Order();
+        order1.setCustomerId(1L);
+        order1.setRestaurantId("mcdonalds");
+
+        ordersRepository.save(order1).block();
+
+        Order order2 = new Order();
+        order2.setCustomerId(1L);
+        order2.setRestaurantId("mcdonalds");
+
+        ordersRepository.save(order2).block();
+
+        client.get()
+                .uri("/orders")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectBody()
+                .jsonPath("[0]").isNotEmpty()
+                .jsonPath("[1]").isNotEmpty();
+    }
+
+    @Test
+    void listFilterRestaurant() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        Restaurant pizzahut = new Restaurant();
+        pizzahut.setId("pizzahut");
+        pizzahut.setName("PizzaHut");
+
+        restaurantsRepository.save(pizzahut).block();
+
+        Order order1 = new Order();
+        order1.setCustomerId(1L);
+        order1.setRestaurantId("mcdonalds");
+
+        ordersRepository.save(order1).block();
+
+        Order order2 = new Order();
+        order2.setCustomerId(1L);
+        order2.setRestaurantId("pizzahut");
+
+        ordersRepository.save(order2).block();
+
+        client.get()
+                .uri("/orders?restaurantId=pizzahut")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectBody()
+                .jsonPath("[0]").isNotEmpty()
+                .jsonPath("[1]").doesNotExist();
+    }
+
+    @Test
+    void listCustomerFilter()
+    {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Customer customer2 = new Customer();
+        customer2.setId(2L);
+        customer2.setName("testing 2");
+
+        customersRepository.save(customer2).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        Order order1 = new Order();
+        order1.setCustomerId(1L);
+        order1.setRestaurantId("mcdonalds");
+
+        ordersRepository.save(order1).block();
+
+        Order order2 = new Order();
+        order2.setCustomerId(2L);
+        order2.setRestaurantId("mcdonalds");
+
+        ordersRepository.save(order2).block();
+
+        client.get()
+                .uri("/orders?customerId=2")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectBody()
+                .jsonPath("[0]").isNotEmpty()
+                .jsonPath("[1]").doesNotExist();
+    }
+
+    @Test
+    void listFilterStatus() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        Order order1 = new Order();
+        order1.setCustomerId(1L);
+        order1.setRestaurantId("mcdonalds");
+        order1.setStatus(OrderStatus.CANCELLED);
+
+        ordersRepository.save(order1).block();
+
+        Order order2 = new Order();
+        order2.setCustomerId(1L);
+        order2.setRestaurantId("mcdonalds");
+        order2.setStatus(OrderStatus.COMPLETED);
+
+        ordersRepository.save(order2).block();
+
+        client.get()
+                .uri("/orders?status=COMPLETED")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectBody()
+                .jsonPath("[0]").isNotEmpty()
+                .jsonPath("[1]").doesNotExist();
+    }
 }

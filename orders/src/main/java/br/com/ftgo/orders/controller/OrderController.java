@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -34,6 +35,22 @@ public class OrderController {
 
     @Autowired
     private ObjectMapper mapper;
+
+
+    @GetMapping
+    public Flux<Order> list(Order orderSearchCriteria) {
+        return repository.findAll(Example.of(orderSearchCriteria))
+                .flatMap(order ->
+                        customersRepository.findById(order.getCustomerId())
+                                .doOnNext(customer -> order.setCustomer(customer))
+                                .thenReturn(order)
+                )
+                .flatMap(order ->
+                        restaurantsRepository.findById(order.getRestaurantId())
+                                .doOnNext(restaurant -> order.setRestaurant(restaurant))
+                                .thenReturn(order)
+                );
+    }
 
     @GetMapping("/{id}")
     public Mono<Order> get(@PathVariable String id) {
@@ -136,6 +153,5 @@ public class OrderController {
                         return Mono.error(exception);
                     }
                 });
-    }
     }
 }
