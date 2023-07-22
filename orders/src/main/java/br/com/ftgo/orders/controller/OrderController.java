@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +39,9 @@ public class OrderController {
 
 
     @GetMapping
-    public Flux<Order> list(Order orderSearchCriteria) {
-        return repository.findAll(Example.of(orderSearchCriteria))
+    public Flux<Order> list(Order orderSearchCriteria, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "50") int perPage) {
+        return repository.findBy(Example.of((Order) orderSearchCriteria), query -> query.page(PageRequest.of(page-1, perPage)))
+                .flatMapIterable(stream -> stream.toList())
                 .flatMap(order ->
                         customersRepository.findById(order.getCustomerId())
                                 .doOnNext(customer -> order.setCustomer(customer))

@@ -36,7 +36,7 @@ public class Order {
     @NotEmpty
     private String paymentType;
 
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus status;
 
     @Valid
     @NotEmpty
@@ -56,6 +56,7 @@ public class Order {
         order.setRestaurantId(data.getRestaurantId());
         order.setItems(data.getItems());
         order.setPaymentType(data.getPaymentType());
+        order.setStatus(OrderStatus.PENDING);
         return order;
     }
 

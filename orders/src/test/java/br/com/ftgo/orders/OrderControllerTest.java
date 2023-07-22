@@ -751,4 +751,73 @@ public class OrderControllerTest {
                 .jsonPath("[0]").isNotEmpty()
                 .jsonPath("[1]").doesNotExist();
     }
+
+    @Test
+    void listPagination() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        Order order1 = new Order();
+        order1.setId("order1");
+        order1.setCustomerId(1L);
+        order1.setRestaurantId("mcdonalds");
+        order1.setStatus(OrderStatus.CANCELLED);
+
+        ordersRepository.save(order1).block();
+
+        Order order2 = new Order();
+        order2.setId("order2");
+        order2.setCustomerId(1L);
+        order2.setRestaurantId("mcdonalds");
+        order2.setStatus(OrderStatus.PENDING);
+
+        ordersRepository.save(order2).block();
+
+        Order order3 = new Order();
+        order3.setId("order3");
+        order3.setCustomerId(1L);
+        order3.setRestaurantId("mcdonalds");
+        order3.setStatus(OrderStatus.REFUNDED);
+
+        ordersRepository.save(order3).block();
+
+        Order order4 = new Order();
+        order4.setId("order4");
+        order4.setCustomerId(1L);
+        order4.setRestaurantId("mcdonalds");
+        order4.setStatus(OrderStatus.DELIVERY);
+
+        ordersRepository.save(order4).block();
+
+        Order order5 = new Order();
+        order5.setId("order5");
+        order5.setCustomerId(1L);
+        order5.setRestaurantId("mcdonalds");
+        order5.setStatus(OrderStatus.COMPLETED);
+
+        ordersRepository.save(order5).block();
+
+        System.out.println(ordersRepository.count().block());
+
+        client.get()
+                .uri("/orders?perPage=3")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("[0]").isNotEmpty()
+                .jsonPath("[1]").isNotEmpty()
+                .jsonPath("[2]").isNotEmpty()
+                .jsonPath("[3]").doesNotExist();
+    }
 }
