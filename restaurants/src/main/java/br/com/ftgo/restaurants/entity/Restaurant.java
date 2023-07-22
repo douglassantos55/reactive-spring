@@ -26,7 +26,7 @@ public class Restaurant {
 
     private String description;
 
-    private byte[] logo;
+    private String logo;
 
     @Valid
     @NotEmpty
@@ -119,11 +119,11 @@ public class Restaurant {
         this.blocked = blocked;
     }
 
-    public void setLogo(byte[] logo) {
+    public void setLogo(String logo) {
         this.logo = logo;
     }
 
-    public byte[] getLogo() {
+    public String getLogo() {
         return logo;
     }
 }

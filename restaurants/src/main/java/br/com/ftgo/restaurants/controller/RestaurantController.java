@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.ByteArrayOutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/restaurants")
@@ -53,21 +53,13 @@ public class RestaurantController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Restaurant> create(@Valid Restaurant restaurant, @RequestPart(required = false) Mono<FilePart> logoFile) {
         return logoFile
-                .map(file -> file.content().defaultIfEmpty(bufferFactory.allocateBuffer(0)))
-                .flatMap(bufferFlux -> bufferFlux.collect(
-                        Collectors.reducing(
-                                new byte[]{},
-                                buffer -> buffer.asByteBuffer().array(),
-                                (bytes, acc) -> {
-                                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-                                    stream.writeBytes(bytes);
-                                    stream.writeBytes(acc);
-
-                                    return stream.toByteArray();
-                                })
-                ))
-                .doOnNext(bytes -> restaurant.setLogo(bytes))
+                .flatMap(file -> {
+                    Path uploadPath = Paths.get("upload-dir").resolve(file.filename()).normalize().toAbsolutePath();
+                    return file.transferTo(uploadPath).thenReturn(uploadPath);
+                })
+                .doOnNext(uploadPath -> {
+                    restaurant.setLogo(uploadPath.toUri().toString());
+                })
                 .thenReturn(restaurant)
                 .flatMap(repository::save)
                 .flatMap(result -> {
@@ -90,21 +82,11 @@ public class RestaurantController {
         return get(id)
                 .flatMap(restaurant ->
                     logoFile
-                            .map(file -> file.content().defaultIfEmpty(bufferFactory.allocateBuffer(0)))
-                            .flatMap(bufferFlux -> bufferFlux.collect(
-                                    Collectors.reducing(
-                                            new byte[]{},
-                                            buffer -> buffer.asByteBuffer().array(),
-                                            (bytes, acc) -> {
-                                                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-                                                stream.writeBytes(bytes);
-                                                stream.writeBytes(acc);
-
-                                                return stream.toByteArray();
-                                            })
-                            ))
-                            .doOnNext(bytes -> restaurant.setLogo(bytes))
+                            .flatMap(file -> {
+                                Path uploadPath = Paths.get("upload-dir").resolve(file.filename()).normalize().toAbsolutePath();
+                                return file.transferTo(uploadPath).thenReturn(uploadPath);
+                            })
+                            .doOnNext(uploadPath -> restaurant.setLogo(uploadPath.toUri().toString()))
                             .thenReturn(restaurant)
                 )
                 .map(restaurant -> {

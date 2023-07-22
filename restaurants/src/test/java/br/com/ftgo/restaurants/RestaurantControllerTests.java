@@ -319,8 +319,6 @@ public class RestaurantControllerTests {
         builder.part("menu[1].price", "7.55");
         builder.part("logoFile", new ClassPathResource("/test.txt", RestaurantControllerTests.class));
 
-        System.out.println(Base64.getEncoder().encode("testing".getBytes()).toString());
-
         client.put()
                 .uri("/restaurants/" + restaurant.getId())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
