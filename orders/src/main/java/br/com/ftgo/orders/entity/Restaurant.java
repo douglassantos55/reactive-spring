@@ -19,6 +19,9 @@ public class Restaurant {
     private String name;
 
     @NotEmpty
+    private String logo;
+
+    @NotEmpty
     @Valid
     private List<MenuItem> menu = new ArrayList<>();
 
@@ -44,6 +47,14 @@ public class Restaurant {
 
     public List<MenuItem> getMenu() {
         return menu;
+    }
+
+    public String getLogo() {
+        return logo;
+    }
+
+    public void setLogo(String logo) {
+        this.logo = logo;
     }
 }
 
