@@ -1,282 +1,387 @@
 package br.com.fgto.customers;
 
+import br.com.fgto.customers.entity.Address;
 import br.com.fgto.customers.repository.CustomerRepository;
 import br.com.fgto.customers.entity.Customer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.time.Instant;
 
 @SpringBootTest(classes = AmqpTestConfiguration.class)
 public class CustomerControllerTests {
-    private WebTestClient client;
+    private MockMvc client;
 
     @Autowired
     private CustomerRepository repository;
 
+    @Autowired
+    private ObjectMapper mapper;
+
     @BeforeEach
-    void setUp(ApplicationContext context) {
-        repository.deleteAll().block();
-        client = WebTestClient.bindToApplicationContext(context).build();
+    void setUp(WebApplicationContext context) {
+        repository.deleteAll();
+        client = MockMvcBuilders.webAppContextSetup(context).build();
     }
 
     @Test
-    void createValidationError() {
+    void createValidationError() throws Exception {
         Customer customer = new Customer();
-        customer.setName(" ");
+        customer.setName("");
+        customer.setDocument("");
+        customer.setBillingAddress(new Address());
 
-        client.post()
-                .uri("/customers")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(new Customer())
-                .exchange()
-                .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("errors.document").isEqualTo("must not be empty")
-                .jsonPath("errors.name").isEqualTo("must not be empty")
-                .jsonPath("errors.billingAddress").isEqualTo("must not be empty");
-
+        client.perform(
+                        MockMvcRequestBuilders
+                                .post("/customers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(customer))
+                )
+                .andExpectAll(
+                        MockMvcResultMatchers.status().isBadRequest(),
+                        MockMvcResultMatchers.jsonPath("errors.document").value("must not be empty"),
+                        MockMvcResultMatchers.jsonPath("errors.name").value("must not be empty"),
+                        MockMvcResultMatchers.jsonPath("$['errors']['billingAddress.street']").value("must not be empty")
+                );
     }
 
     @Test
-    void createNoDeliveryAddress() {
-        Customer customer = new Customer();
-        customer.setName("john doe");
-        customer.setDocument("830.139.280-00");
-        customer.setBillingAddress("new york city");
-
-        client.post()
-                .uri("/customers")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(customer)
-                .exchange()
-                .expectStatus()
-                .isCreated()
-                .expectBody()
-                .json("{\"name\":\"john doe\",\"billingAddress\":\"new york city\",\"deliveryAddress\":\"new york city\"}");
-    }
-
-    @Test
-    void createWithDeliveryAddress() {
+    void createNoDeliveryAddress() throws Exception {
         Customer customer = new Customer();
         customer.setName("john doe");
         customer.setDocument("830.139.280-00");
-        customer.setBillingAddress("new york");
-        customer.setDeliveryAddress("brooklyn");
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
 
-        client.post()
-                .uri("/customers")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(customer)
-                .exchange()
-                .expectStatus()
-                .isCreated()
-                .expectBody()
-                .json("{\"name\":\"john doe\",\"deliveryAddress\":\"brooklyn\",\"billingAddress\":\"new york\"}");
+        client.perform(
+                        MockMvcRequestBuilders
+                                .post("/customers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(customer))
+                )
+                .andExpectAll(
+                        MockMvcResultMatchers.status().isCreated(),
+                        MockMvcResultMatchers.jsonPath("name").value("john doe"),
+                        MockMvcResultMatchers.jsonPath("document").value("830.139.280-00"),
+
+                        MockMvcResultMatchers.jsonPath("billingAddress.street").value("rua"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.number").value("530"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.neighborhood").value("centro"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.city").value("Sao Paulo"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.state").value("SP"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.zipcode").value("01010-000"),
+
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.street").value("rua"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.number").value("530"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.neighborhood").value("centro"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.city").value("Sao Paulo"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.state").value("SP"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.zipcode").value("01010-000")
+                );
     }
 
     @Test
-    void createInvalidDocument() {
+    void createWithDeliveryAddress() throws Exception {
+        Customer customer = new Customer();
+        customer.setName("john doe");
+        customer.setDocument("830.139.280-00");
+
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
+
+        Address delivery = new Address("delivery", "33", "suburbs", "Campinas", "SP", "13052-522");
+        customer.setDeliveryAddress(delivery);
+
+        client.perform(
+                        MockMvcRequestBuilders
+                                .post("/customers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(customer))
+                )
+                .andExpectAll(
+                        MockMvcResultMatchers.status().isCreated(),
+                        MockMvcResultMatchers.jsonPath("name").value("john doe"),
+                        MockMvcResultMatchers.jsonPath("document").value("830.139.280-00"),
+
+                        MockMvcResultMatchers.jsonPath("billingAddress.street").value("rua"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.number").value("530"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.neighborhood").value("centro"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.city").value("Sao Paulo"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.state").value("SP"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.zipcode").value("01010-000"),
+
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.street").value("delivery"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.number").value("33"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.neighborhood").value("suburbs"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.city").value("Campinas"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.state").value("SP"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.zipcode").value("13052-522")
+                );
+    }
+
+    @Test
+    void createInvalidDocument() throws Exception {
         Customer customer = new Customer();
         customer.setName("john doe");
         customer.setDocument("830.139.280-10");
-        customer.setBillingAddress("new york");
 
-        client.post()
-                .uri("/customers")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(customer)
-                .exchange()
-                .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("errors.document").isEqualTo("invalid document");
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
+
+        client.perform(
+                        MockMvcRequestBuilders
+                                .post("/customers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(customer))
+                )
+                .andExpectAll(
+                        MockMvcResultMatchers.status().isBadRequest(),
+                        MockMvcResultMatchers.jsonPath("errors.document").value("invalid document")
+                );
     }
 
     @Test
-    void list() {
+    void list() throws Exception {
         Customer c1 = new Customer();
         c1.setName("john 1");
         c1.setDocument("830.139.280-00");
-        c1.setBillingAddress("san francisco");
-        repository.save(c1).block();
+
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        c1.setBillingAddress(billing);
+
+        repository.save(c1);
 
         Customer c2 = new Customer();
         c2.setName("john 2");
         c2.setDocument("614.041.370-25");
-        c2.setBillingAddress("san francisco");
-        c2.setDeliveryAddress("california");
-        repository.save(c2).block();
+
+        Address billing2 = new Address("john 2", "1530", "centro", "Sao Paulo", "SP", "01010-000");
+        c2.setBillingAddress(billing2);
+
+        Address delivery = new Address("delivery", "111", "centro", "Mogi Mirim", "SP", "13000-000");
+        c2.setDeliveryAddress(delivery);
+
+        repository.save(c2);
 
         Customer c3 = new Customer();
         c3.setName("john 3");
         c3.setDocument("670.788.270-82");
-        c3.setBillingAddress("san francisco");
-        c3.setDeliveryAddress("new york");
+
+        Address billing3 = new Address("billing deleted", "111", "centro", "Mogi Mirim", "SP", "13000-000");
+        c3.setBillingAddress(billing3);
+
+        Address delivery2 = new Address("delivery deleted", "111", "centro", "Mogi Mirim", "SP", "13000-000");
+        c3.setDeliveryAddress(delivery2);
+
         c3.setDeletedAt(Instant.now());
-        repository.save(c3).block();
 
-        client.get()
-                .uri("/customers")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody().json("[" +
-                        "{\"id\":3,\"name\":\"john 1\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"san francisco\"}," +
-                        "{\"id\":4,\"name\":\"john 2\",\"billingAddress\":\"san francisco\",\"deliveryAddress\":\"california\"}" +
-                "]");
+        repository.save(c3);
+
+        client.perform(
+                        MockMvcRequestBuilders
+                                .get("/customers")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpectAll(
+                        MockMvcResultMatchers.status().isOk(),
+                        MockMvcResultMatchers.jsonPath("$[0]['name']").value("john 1"),
+                        MockMvcResultMatchers.jsonPath("$[0]['document']").value("830.139.280-00"),
+                        MockMvcResultMatchers.jsonPath("$[0]['billingAddress']['street']").value("rua"),
+
+                        MockMvcResultMatchers.jsonPath("$[1]['name']").value("john 2"),
+                        MockMvcResultMatchers.jsonPath("$[1]['document']").value("614.041.370-25"),
+                        MockMvcResultMatchers.jsonPath("$[1]['billingAddress']['street']").value("john 2"),
+
+                        MockMvcResultMatchers.jsonPath("$[2]").doesNotExist()
+                );
     }
 
     @Test
-    void getNonExistent() {
-        client.get()
-                .uri("/customers/10000")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus()
-                .isNotFound();
+    void getNonExistent() throws Exception {
+        client.perform(
+                        MockMvcRequestBuilders
+                                .get("/customers/1000")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
-    void getInvalid() {
-        client.get()
-                .uri("/customers/something")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+    void getInvalid() throws Exception {
+        client.perform(
+                        MockMvcRequestBuilders
+                                .get("/customers/something")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
-    void getExisting() {
+    void getExisting() throws Exception {
         Customer customer = new Customer();
         customer.setName("john 1");
         customer.setDocument("830.139.280-00");
-        customer.setBillingAddress("san francisco");
 
-        Customer created = repository.save(customer).block();
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
 
-        client.get()
-                .uri("/customers/" + created.getId())
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .json("{}");
+        Customer created = repository.save(customer);
+
+        client.perform(
+                        MockMvcRequestBuilders
+                                .get("/customers/" + created.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpectAll(
+                        MockMvcResultMatchers.status().isOk(),
+                        MockMvcResultMatchers.jsonPath("name").value("john 1"),
+                        MockMvcResultMatchers.jsonPath("document").value("830.139.280-00"),
+
+                        MockMvcResultMatchers.jsonPath("billingAddress.street").value("rua"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.number").value("530"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.neighborhood").value("centro"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.city").value("Sao Paulo"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.state").value("SP"),
+                        MockMvcResultMatchers.jsonPath("billingAddress.zipcode").value("01010-000"),
+
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.street").value("rua"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.number").value("530"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.neighborhood").value("centro"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.city").value("Sao Paulo"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.state").value("SP"),
+                        MockMvcResultMatchers.jsonPath("deliveryAddress.zipcode").value("01010-000")
+                );
     }
 
     @Test
-    void deleteNonExisting() {
-        client.delete()
-                .uri("/customers/1000")
-                .exchange()
-                .expectStatus()
-                .isNotFound();
+    void deleteNonExisting() throws Exception {
+        client.perform(MockMvcRequestBuilders.delete("/customers/1000"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
-    void deleteInvalid() {
-        client.delete()
-                .uri("/customers/something")
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+    void deleteInvalid() throws Exception {
+        client.perform(MockMvcRequestBuilders.delete("/customers/something"))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
-    void deleteExisting() {
+    void deleteExisting() throws Exception {
         Customer customer = new Customer();
         customer.setName("foobar");
         customer.setDocument("830.139.280-00");
-        customer.setBillingAddress("new york");
 
-        Customer created = repository.save(customer).block();
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
 
-        client.delete()
-                .uri("/customers/" + created.getId())
-                .exchange()
-                .expectStatus()
-                .isNoContent();
+        Customer created = repository.save(customer);
 
-        client.get()
-                .uri("/customers/" + created.getId())
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus()
-                .isNotFound();
+        client.perform(MockMvcRequestBuilders.delete("/customers/" + created.getId()))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
 
+        client.perform(
+                MockMvcRequestBuilders
+                        .get("/customers/" + created.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+        ).andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
-    void updateNonExisting() {
+    void updateNonExisting() throws Exception {
         Customer customer = new Customer();
-        customer.setName("updating");
-        customer.setBillingAddress("New Jersey");
+        customer.setName("foobar");
         customer.setDocument("830.139.280-00");
 
-        client.put()
-                .uri("/customers/15777")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(customer)
-                .exchange()
-                .expectStatus()
-                .isNotFound();
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
+
+        client.perform(
+                MockMvcRequestBuilders
+                        .put("/customers/157")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(customer))
+        ).andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test
-    void updateInvalid() {
+    void updateInvalid() throws Exception {
         Customer customer = new Customer();
-        customer.setName("updating");
-        customer.setBillingAddress("New Jersey");
-
-        client.put()
-                .uri("/customers/something")
-                .accept(MediaType.APPLICATION_JSON)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(customer)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
-    }
-
-    @Test
-    void updateExisting() {
-        Customer customer = new Customer();
-        customer.setName("updating");
-        customer.setBillingAddress("New Jersey");
+        customer.setName("foobar");
         customer.setDocument("830.139.280-00");
 
-        Customer created = repository.save(customer).block();
-        System.out.println(created.getId());
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
+
+        client.perform(
+                MockMvcRequestBuilders
+                        .put("/customers/something")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(customer))
+        ).andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    void updateExisting() throws Exception {
+        Customer customer = new Customer();
+        customer.setName("foobar");
+        customer.setDocument("830.139.280-00");
+
+        Address billing = new Address("rua", "530", "centro", "Sao Paulo", "SP", "01010-000");
+        customer.setBillingAddress(billing);
+
+        Customer created = repository.save(customer);
 
         Customer data = new Customer();
         data.setName("should be updated");
-        data.setBillingAddress("nova iorque");
-        data.setDeliveryAddress("italy");
         data.setDocument("614.041.370-25");
+        data.setBillingAddress(new Address("billing", "000", "cambui", "campinas", "SP", "13800-000"));
+        data.setDeliveryAddress(new Address("delivery", "300", "centro", "sao paulo", "sp", "13800-122"));
 
-        client.put()
-                .uri("/customers/" + created.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .bodyValue(data)
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .json("{\"name\":\"should be updated\",\"billingAddress\":\"nova iorque\",\"deliveryAddress\":\"italy\"}");
+        client.perform(
+                MockMvcRequestBuilders
+                        .put("/customers/" + created.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(data))
+        ).andExpectAll(
+                MockMvcResultMatchers.status().isOk(),
+                MockMvcResultMatchers.jsonPath("name").value("should be updated"),
+                MockMvcResultMatchers.jsonPath("document").value("614.041.370-25"),
 
+                MockMvcResultMatchers.jsonPath("billingAddress.street").value("billing"),
+                MockMvcResultMatchers.jsonPath("billingAddress.number").value("000"),
+                MockMvcResultMatchers.jsonPath("billingAddress.neighborhood").value("cambui"),
+                MockMvcResultMatchers.jsonPath("billingAddress.city").value("campinas"),
+                MockMvcResultMatchers.jsonPath("billingAddress.state").value("SP"),
+                MockMvcResultMatchers.jsonPath("billingAddress.zipcode").value("13800-000"),
+
+                MockMvcResultMatchers.jsonPath("deliveryAddress.street").value("delivery"),
+                MockMvcResultMatchers.jsonPath("deliveryAddress.number").value("300"),
+                MockMvcResultMatchers.jsonPath("deliveryAddress.neighborhood").value("centro"),
+                MockMvcResultMatchers.jsonPath("deliveryAddress.city").value("sao paulo"),
+            MockMvcResultMatchers.jsonPath("deliveryAddress.state").value("sp"),
+                MockMvcResultMatchers.jsonPath("deliveryAddress.zipcode").value("13800-122")
+        );
     }
 }

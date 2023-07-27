@@ -19,14 +19,34 @@ public class Customer {
     @NotEmpty
     private String name;
 
-    @NotEmpty
     @CpfCnpj
+    @NotEmpty
     private String document;
 
-    @NotEmpty
-    private String billingAddress;
+    @NotNull
+    @Valid
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "street", column = @Column(name = "billing_street")),
+            @AttributeOverride(name = "number", column = @Column(name = "billing_number")),
+            @AttributeOverride(name = "neighborhood", column = @Column(name = "billing_neighborhood")),
+            @AttributeOverride(name = "city", column = @Column(name = "billing_city")),
+            @AttributeOverride(name = "state", column = @Column(name = "billing_state")),
+            @AttributeOverride(name = "zipcode", column = @Column(name = "billing_zipcode")),
+    })
+    private Address billingAddress;
 
-    private String deliveryAddress;
+    @Embedded
+    @Valid
+    @AttributeOverrides({
+            @AttributeOverride(name = "street", column = @Column(name = "delivery_street")),
+            @AttributeOverride(name = "number", column = @Column(name = "delivery_number")),
+            @AttributeOverride(name = "neighborhood", column = @Column(name = "delivery_neighborhood")),
+            @AttributeOverride(name = "city", column = @Column(name = "delivery_city")),
+            @AttributeOverride(name = "state", column = @Column(name = "delivery_state")),
+            @AttributeOverride(name = "zipcode", column = @Column(name = "delivery_zipcode")),
+    })
+    private Address deliveryAddress;
 
     @CreatedDate
     private Instant createdAt;
@@ -48,15 +68,15 @@ public class Customer {
         this.name = name;
     }
 
-    public String getBillingAddress() {
+    public Address getBillingAddress() {
         return billingAddress;
     }
 
-    public void setBillingAddress(String address) {
+    public void setBillingAddress(Address address) {
         this.billingAddress = address;
     }
 
-    public String getDeliveryAddress() {
+    public Address getDeliveryAddress() {
         if (deliveryAddress == null) {
             return getBillingAddress();
         }
@@ -64,7 +84,7 @@ public class Customer {
 
     }
 
-    public void setDeliveryAddress(String address) {
+    public void setDeliveryAddress(Address address) {
         this.deliveryAddress = address;
     }
 
