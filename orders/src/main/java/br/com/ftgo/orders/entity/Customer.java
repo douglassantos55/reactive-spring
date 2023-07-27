@@ -19,7 +19,7 @@ public class Customer {
     private String document;
 
     @NotEmpty
-    private String billingAddress;
+    private Address billingAddress;
 
     public Long getId() {
         return id;
@@ -37,11 +37,11 @@ public class Customer {
         this.name = name;
     }
 
-    public String getBillingAddress() {
+    public Address getBillingAddress() {
         return billingAddress;
     }
 
-    public void setBillingAddress(String billingAddress) {
+    public void setBillingAddress(Address billingAddress) {
         this.billingAddress = billingAddress;
     }
 
