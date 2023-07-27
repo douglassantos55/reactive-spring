@@ -18,16 +18,16 @@ public class MessageProcessor {
 
     @Scheduled(fixedDelay = 1000)
     public void processFailedMessages() {
-        repository.findAll().flatMap(message -> {
+        for (br.com.fgto.customers.entity.Message message : repository.findAll()) {
             try {
                 Message event = new Message(message.getBody());
                 template.send(message.getExchange(), message.getRoutingKey(), event);
 
-                return repository.delete(message).thenReturn(message);
+                repository.delete(message);
             } catch (AmqpException exception) {
                 message.attempt();
-                return repository.save(message);
+                repository.save(message);
             }
-        }).onErrorComplete().subscribe();
+        }
     }
 }

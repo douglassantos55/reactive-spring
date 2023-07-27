@@ -13,10 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.List;
 
 @RestController
 @RequestMapping("/customers")
@@ -34,82 +33,73 @@ public class CustomerController {
     private ObjectMapper mapper;
 
     @GetMapping
-    public Flux<Customer> list() {
+    public List<Customer> list() {
         return repository.findByDeletedAtIsNull();
     }
 
     @GetMapping("/{id}")
-    public Mono<Customer> get(@PathVariable Long id) {
-        return repository.findByIdAndDeletedAtIsNull(id)
-                .switchIfEmpty(Mono.error(new ResourceNotFoundException("customer", id)));
+    public Customer get(@PathVariable Long id) {
+        return repository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResourceNotFoundException("customer", id));
     }
 
     @PostMapping
     @Transactional
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Customer> create(@Valid @RequestBody Customer customer) {
-        return repository.save(customer).flatMap(customer1 -> {
-            try {
-                Message message = new Message();
+    public Customer create(@Valid @RequestBody Customer customer) throws JsonProcessingException {
+        customer = repository.save(customer);
 
-                message.setExchange("notifications.exchange");
-                message.setRoutingKey("customer.created");
-                message.setBody(mapper.writeValueAsBytes(customer1));
+        Message message = new Message();
 
-                return messageRepository.save(message).thenReturn(customer1);
-            } catch (JsonProcessingException exception) {
-                return Mono.error(exception);
-            }
-        });
+        message.setExchange("notifications.exchange");
+        message.setRoutingKey("customer.created");
+        message.setBody(mapper.writeValueAsBytes(customer));
+
+        messageRepository.save(message);
+
+        return customer;
     }
 
     @PutMapping("/{id}")
-    public Mono<Customer> update(@PathVariable Long id, @Valid @RequestBody Customer data) {
-        return get(id)
-                .map(customer -> {
-                    customer.setName(data.getName());
-                    customer.setBillingAddress(data.getBillingAddress());
-                    customer.setDeliveryAddress(data.getDeliveryAddress());
+    public Customer update(@PathVariable Long id, @Valid @RequestBody Customer data) throws JsonProcessingException {
+        Customer customer = get(id);
 
-                    return customer;
-                })
-                .flatMap(repository::save)
-                .flatMap(customer -> {
-                    try {
-                        Message message = new Message();
+        customer.setName(data.getName());
+        customer.setDocument(data.getDocument());
+        customer.setBillingAddress(data.getBillingAddress());
+        customer.setDeliveryAddress(data.getDeliveryAddress());
 
-                        message.setExchange("notifications.exchange");
-                        message.setRoutingKey("customer.updated");
-                        message.setBody(mapper.writeValueAsBytes(customer));
+        customer = repository.save(customer);
 
-                        return messageRepository.save(message).thenReturn(customer);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                });
+        Message message = new Message();
+
+        message.setExchange("notifications.exchange");
+        message.setRoutingKey("customer.updated");
+        message.setBody(mapper.writeValueAsBytes(customer));
+
+        messageRepository.save(message);
+
+        return customer;
     }
 
     @DeleteMapping("/{id}")
     @Transactional
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Customer> delete(@PathVariable Long id) {
-        return get(id)
-                .flatMap(customer -> {
-                    customer.setDeletedAt(Instant.now());
-                    return repository.save(customer);
-                })
-                .flatMap(customer -> {
-                    try {
-                        Message message = new Message();
+    public Customer delete(@PathVariable Long id) throws JsonProcessingException {
+        Customer customer = get(id);
+        customer.setDeletedAt(Instant.now());
 
-                        message.setExchange("notifications.exchange");
-                        message.setRoutingKey("customer.deleted");
-                        message.setBody(mapper.writeValueAsBytes(customer));
+        repository.save(customer);
 
-                        return messageRepository.save(message).thenReturn(customer);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                });
+        Message message = new Message();
+
+        message.setExchange("notifications.exchange");
+        message.setRoutingKey("customer.deleted");
+        message.setBody(mapper.writeValueAsBytes(customer));
+
+        messageRepository.save(message);
+
+        return customer;
     }
 }

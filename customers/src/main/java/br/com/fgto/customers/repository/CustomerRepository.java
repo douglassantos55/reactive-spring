@@ -1,12 +1,13 @@
 package br.com.fgto.customers.repository;
 
 import br.com.fgto.customers.entity.Customer;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import org.springframework.data.repository.ListCrudRepository;
 
-public interface CustomerRepository extends R2dbcRepository<Customer, Long> {
-    Flux<Customer> findByDeletedAtIsNull();
+import java.util.List;
+import java.util.Optional;
 
-    Mono<Customer> findByIdAndDeletedAtIsNull(Long id);
+public interface CustomerRepository extends ListCrudRepository<Customer, Long> {
+    List<Customer> findByDeletedAtIsNull();
+
+    Optional<Customer> findByIdAndDeletedAtIsNull(Long id);
 }

@@ -2,6 +2,7 @@ package br.com.fgto.customers.exception.handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.WebExchangeBindException;
 
@@ -12,7 +13,7 @@ import java.util.HashMap;
 public class ValidationErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ValidationErrors validationErrors(WebExchangeBindException exception) {
+    public ValidationErrors validationErrors(MethodArgumentNotValidException exception) {
         ValidationErrors errors = new ValidationErrors();
         for (FieldError error : exception.getFieldErrors()) {
             errors.setError(error.getField(), error.getDefaultMessage());
