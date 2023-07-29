@@ -15,7 +15,9 @@ CREATE SEQUENCE invoices_seq INCREMENT BY 50;
 
 CREATE TABLE IF NOT EXISTS customers (
     id INT PRIMARY KEY,
-    gateway_id VARCHAR(255) NOT NULL UNIQUE
+    gateway_id VARCHAR(255) NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS payment_methods (
@@ -23,7 +25,9 @@ CREATE TABLE IF NOT EXISTS payment_methods (
     gateway_id VARCHAR(255) NOT NULL UNIQUE,
     display_number VARCHAR(25) NOT NULL,
     payment_type VARCHAR(25) NOT NULL,
-    description VARCHAR(255) DEFAULT NULL
+    description VARCHAR(255) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT NULL
 );
 
 CREATE SEQUENCE payment_methods_seq INCREMENT BY 50;

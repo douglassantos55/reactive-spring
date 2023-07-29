@@ -1,9 +1,15 @@
 package br.com.ftgo.payment.entity;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "payment_methods")
+@EntityListeners(AuditingEntityListener.class)
 public class PaymentMethod {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -16,6 +22,12 @@ public class PaymentMethod {
     private String paymentType;
 
     private String description;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -55,5 +67,21 @@ public class PaymentMethod {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
