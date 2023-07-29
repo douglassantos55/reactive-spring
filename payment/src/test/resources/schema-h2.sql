@@ -1,0 +1,40 @@
+CREATE TABLE IF NOT EXISTS invoices (
+    id INT PRIMARY KEY,
+    gateway_id VARCHAR(255) NOT NULL UNIQUE,
+    order_id VARCHAR(255) NOT NULL,
+    customer_id INT NOT NULL,
+    total DECIMAL(11, 2) NOT NULL,
+    due_date DATETIME NOT NULL,
+    status VARCHAR(25) NOT NULL,
+    payment_url VARCHAR(255) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT NULL
+);
+
+CREATE SEQUENCE invoices_seq INCREMENT BY 50;
+
+CREATE TABLE IF NOT EXISTS customers (
+    id INT PRIMARY KEY,
+    gateway_id VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS payment_methods (
+    id INT PRIMARY KEY,
+    gateway_id VARCHAR(255) NOT NULL UNIQUE,
+    display_number VARCHAR(25) NOT NULL,
+    payment_type VARCHAR(25) NOT NULL,
+    description VARCHAR(255) DEFAULT NULL
+);
+
+CREATE SEQUENCE payment_methods_seq INCREMENT BY 50;
+
+CREATE TABLE IF NOT EXISTS messages (
+    id INT NOT NULL PRIMARY KEY,
+    routing_key VARCHAR(104) NOT NULL,
+    exchange VARCHAR(100) NOT NULL,
+    body VARBINARY(1000) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_attempt DATETIME DEFAULT NULL
+);
+
+CREATE SEQUENCE messages_seq INCREMENT BY 50;
