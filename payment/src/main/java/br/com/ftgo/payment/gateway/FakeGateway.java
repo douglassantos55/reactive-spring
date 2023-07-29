@@ -5,6 +5,7 @@ import br.com.ftgo.payment.dto.Order;
 import br.com.ftgo.payment.entity.Customer;
 import br.com.ftgo.payment.entity.Invoice;
 import br.com.ftgo.payment.entity.PaymentMethod;
+import br.com.ftgo.payment.exception.GatewayException;
 import br.com.ftgo.payment.exception.PaymentMethodNotFoundException;
 import br.com.ftgo.payment.repository.CustomersRepository;
 import br.com.ftgo.payment.repository.InvoicesRepository;
@@ -33,7 +34,7 @@ public class FakeGateway implements PaymentGateway {
         return paymentType.equals("bank_slip") || paymentType.equals("credit_card");
     }
 
-    public Invoice processPayment(Order order) throws PaymentMethodNotFoundException {
+    public Invoice processPayment(Order order) throws GatewayException {
         Customer customer = customersRepository
                 .findById(order.customer().id())
                 .orElseGet(() -> createCustomer(order.customer()));
