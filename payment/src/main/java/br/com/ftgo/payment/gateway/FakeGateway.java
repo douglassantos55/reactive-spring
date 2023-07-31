@@ -43,7 +43,7 @@ public class FakeGateway implements PaymentGateway {
             if (!methodsRepository.existsByGatewayId(order.paymentMethodId())) {
                 throw new PaymentMethodNotFoundException();
             }
-        } else {
+        } else if (order.paymentType().equals("credit_card")){
             createPaymentMethod(order);
         }
 

@@ -40,7 +40,7 @@ public class ProcessPaymentHandler {
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "payment.process.queue", durable = "true"),
             exchange = @Exchange(name = "payment.exchange"),
-            key = "process.payment"
+            key = "payment.process"
     ))
     public void processPayment(Order order) throws GatewayException {
         try {
