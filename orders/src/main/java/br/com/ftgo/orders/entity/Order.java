@@ -1,5 +1,6 @@
 package br.com.ftgo.orders.entity;
 
+import br.com.ftgo.orders.dto.CardInformation;
 import br.com.ftgo.orders.dto.OrderDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -38,6 +39,9 @@ public class Order {
 
     private OrderStatus status;
 
+    @Transient
+    private CardInformation card;
+
     @Valid
     @NotEmpty
     private List<OrderItem> items = new ArrayList<>();
@@ -55,6 +59,7 @@ public class Order {
         order.setCustomerId(data.getCustomerId());
         order.setRestaurantId(data.getRestaurantId());
         order.setItems(data.getItems());
+        order.setCard(data.getCard());
         order.setPaymentType(data.getPaymentType());
         order.setStatus(OrderStatus.PENDING);
         return order;
@@ -146,5 +151,13 @@ public class Order {
 
     public void setRestaurantId(String restaurantId) {
         this.restaurantId = restaurantId;
+    }
+
+    public CardInformation getCard() {
+        return card;
+    }
+
+    public void setCard(CardInformation card) {
+        this.card = card;
     }
 }

@@ -102,6 +102,8 @@ public class OrderController {
                     }
                     return Mono.just(order);
                 })
+                .map(order -> Order.from(order))
+                .flatMap(repository::save)
                 .flatMap(order -> {
                     try {
                         Message message = new Message();
@@ -114,8 +116,6 @@ public class OrderController {
                         return Mono.error(exception);
                     }
                 })
-                .map(order -> Order.from(order))
-                .flatMap(repository::save)
                 .flatMap(order -> {
                     try {
                         Message message = new Message();
