@@ -43,7 +43,7 @@ public class FakeGateway implements PaymentGateway {
             if (!methodsRepository.existsByGatewayId(order.paymentMethodId())) {
                 throw new PaymentMethodNotFoundException();
             }
-        } else if (order.paymentType().equals("credit_card")){
+        } else if (order.paymentType().equals("credit_card")) {
             createPaymentMethod(order);
         }
 
@@ -65,7 +65,7 @@ public class FakeGateway implements PaymentGateway {
         method.setPaymentType(order.paymentType());
         method.setGatewayId(UUID.randomUUID().toString());
 
-        String cardNumber = order.info().number();
+        String cardNumber = order.card().number();
         method.setDisplayNumber("XXXX XXXX XXXX " + cardNumber.substring(cardNumber.length() - 4));
 
         return methodsRepository.save(method);
