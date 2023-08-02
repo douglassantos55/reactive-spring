@@ -46,6 +46,8 @@ public class Order {
     @NotEmpty
     private List<OrderItem> items = new ArrayList<>();
 
+    private String invoiceUrl;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -159,5 +161,13 @@ public class Order {
 
     public void setCard(CardInformation card) {
         this.card = card;
+    }
+
+    public String getInvoiceUrl() {
+        return invoiceUrl;
+    }
+
+    public void setInvoiceUrl(String invoiceUrl) {
+        this.invoiceUrl = invoiceUrl;
     }
 }

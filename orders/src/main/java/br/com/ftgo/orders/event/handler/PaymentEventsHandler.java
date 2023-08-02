@@ -33,6 +33,7 @@ public class PaymentEventsHandler {
                 .switchIfEmpty(Mono.error(new AmqpRejectAndDontRequeueException("order not found")))
                 .map(order -> {
                     order.setStatus(OrderStatus.valueOf(invoice.status().toUpperCase()));
+                    order.setInvoiceUrl(invoice.paymentUrl());
                     return order;
                 })
                 .flatMap(repository::save)
