@@ -361,7 +361,7 @@ public class OrderControllerTest {
         OrderDTO order = new OrderDTO();
         order.setCustomerId(customer.getId());
         order.setRestaurantId(restaurant.getId());
-        order.setPaymentType("cc");
+        order.setPaymentType("credit_card");
         order.setCard(new CardInformation("", "", "aoeu", ""));
         order.setItems(items);
 
@@ -374,7 +374,7 @@ public class OrderControllerTest {
                 .expectStatus()
                 .isBadRequest()
                 .expectBody()
-                .jsonPath("$['errors']['card.number']").isEqualTo("invalid credit card number")
+                .jsonPath("$['errors']['card.number']").isEqualTo("must not be empty")
                 .jsonPath("$['errors']['card.holderName']").isEqualTo("must not be empty")
                 .jsonPath("$['errors']['card.cvv']").isEqualTo("size must be between 3 and 4")
                 .jsonPath("$['errors']['card.expDate']").isEqualTo("Expiration date must be MM/YYYY");
