@@ -28,7 +28,7 @@ public class RestaurantEventsHandler {
             ),
     })
     public void handleCreatedUpdated(Restaurant restaurant) {
-        repository.save(restaurant).subscribe();
+        repository.save(restaurant).block();
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -37,6 +37,6 @@ public class RestaurantEventsHandler {
             key = "restaurant.deleted"
     ))
     public void handleDeleted(Restaurant restaurant) {
-        repository.delete(restaurant).subscribe();
+        repository.delete(restaurant).block();
     }
 }

@@ -4,12 +4,15 @@ import br.com.ftgo.orders.dto.Invoice;
 import br.com.ftgo.orders.entity.Order;
 import br.com.ftgo.orders.entity.OrderStatus;
 import br.com.ftgo.orders.repository.OrdersRepository;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Component
 public class PaymentEventsHandler {
@@ -27,12 +30,13 @@ public class PaymentEventsHandler {
     ))
     public void handleInvoiceEvents(Invoice invoice) {
         repository.findById(invoice.orderId())
+                .switchIfEmpty(Mono.error(new AmqpRejectAndDontRequeueException("order not found")))
                 .map(order -> {
                     order.setStatus(OrderStatus.valueOf(invoice.status().toUpperCase()));
                     return order;
                 })
                 .flatMap(repository::save)
-                .subscribe();
+                .block();
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -42,11 +46,12 @@ public class PaymentEventsHandler {
     ))
     public void handlePaymentEvents(Order order) {
         repository.findById(order.getId())
+                .switchIfEmpty(Mono.error(new AmqpRejectAndDontRequeueException("order not found")))
                 .map(entity -> {
                     entity.setStatus(order.getStatus());
                     return entity;
                 })
                 .flatMap(repository::save)
-                .subscribe();
+                .block();
     }
 }
