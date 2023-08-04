@@ -277,7 +277,7 @@ public class OrderControllerTest {
         OrderDTO order = new OrderDTO();
         order.setCustomerId(customer.getId());
         order.setRestaurantId(restaurant.getId());
-        order.setPaymentType("cc");
+        order.setPaymentType("credit_card");
         order.setCard(new CardInformation("4129-9939-1834-8256", "Owen Hansen", "03/2023", "987"));
         order.setItems(items);
 
@@ -374,10 +374,49 @@ public class OrderControllerTest {
                 .expectStatus()
                 .isBadRequest()
                 .expectBody()
-                .jsonPath("$['errors']['card.number']").isEqualTo("must not be empty")
+                .jsonPath("$['errors']['card.number']").isEqualTo("invalid credit card number")
                 .jsonPath("$['errors']['card.holderName']").isEqualTo("must not be empty")
                 .jsonPath("$['errors']['card.cvv']").isEqualTo("size must be between 3 and 4")
                 .jsonPath("$['errors']['card.expDate']").isEqualTo("Expiration date must be MM/YYYY");
+    }
+
+    @Test
+    void cardValidation() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setName("testing");
+
+        customersRepository.save(customer).block();
+
+        Restaurant restaurant = new Restaurant();
+        restaurant.setId("mcdonalds");
+        restaurant.setName("McDonald's");
+
+        restaurantsRepository.save(restaurant).block();
+
+        OrderItem item = new OrderItem();
+        item.setQty(1);
+        item.setPrice(30.0);
+        item.setDescription("item");
+
+        ArrayList<OrderItem> items = new ArrayList<>();
+        items.add(item);
+
+        OrderDTO order = new OrderDTO();
+        order.setCustomerId(customer.getId());
+        order.setRestaurantId(restaurant.getId());
+        order.setPaymentType("bank_slip");
+        order.setCard(new CardInformation("", "", "aoeu", ""));
+        order.setItems(items);
+
+        client.post()
+                .uri("/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(order)
+                .exchange()
+                .expectStatus()
+                .isCreated();
     }
 
     @Test

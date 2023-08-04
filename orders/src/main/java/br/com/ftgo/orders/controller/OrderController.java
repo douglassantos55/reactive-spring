@@ -4,20 +4,25 @@ import br.com.ftgo.orders.dto.OrderDTO;
 import br.com.ftgo.orders.entity.*;
 import br.com.ftgo.orders.exception.RelationMissingException;
 import br.com.ftgo.orders.exception.ResourceNotFoundException;
+import br.com.ftgo.orders.exception.ValidationException;
 import br.com.ftgo.orders.repository.CustomersRepository;
 import br.com.ftgo.orders.repository.MessagesRepository;
 import br.com.ftgo.orders.repository.OrdersRepository;
 import br.com.ftgo.orders.repository.RestaurantsRepository;
+import br.com.ftgo.orders.validation.OrderValidator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.lang.reflect.Method;
 
 @RestController
 @RequestMapping("/orders")
@@ -37,6 +42,8 @@ public class OrderController {
     @Autowired
     private ObjectMapper mapper;
 
+    @Autowired
+    private OrderValidator orderValidator;
 
     @GetMapping
     public Flux<Order> list(Order orderSearchCriteria, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "50") int perPage) {
@@ -74,10 +81,18 @@ public class OrderController {
     @PostMapping
     @Transactional
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Order> create(@RequestBody @Valid Mono<OrderDTO> request) {
+    public Mono<Order> create(@RequestBody Mono<OrderDTO> request) {
         RelationMissingException errors = new RelationMissingException();
 
         return request
+                .doOnNext(order -> {
+                    Errors validationErrors = new BeanPropertyBindingResult(order, "order");
+                    orderValidator.validate(order, validationErrors);
+
+                    if (validationErrors.hasErrors()) {
+                        throw new ValidationException(validationErrors);
+                    }
+                })
                 .flatMap(order ->
                         customersRepository
                                 .findById(order.getCustomerId())

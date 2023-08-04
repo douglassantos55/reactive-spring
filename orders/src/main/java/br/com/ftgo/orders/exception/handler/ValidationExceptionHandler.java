@@ -1,6 +1,7 @@
 package br.com.ftgo.orders.exception.handler;
 
 import br.com.ftgo.orders.exception.RelationMissingException;
+import br.com.ftgo.orders.exception.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -36,4 +37,17 @@ public class ValidationExceptionHandler {
         return errors;
     }
 
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ValidationErrors handleValidationException(ValidationException exception) {
+        ValidationErrors errors = new ValidationErrors();
+
+        for (FieldError error : exception.getErrors()) {
+            System.out.println(error.getField());
+            errors.addError(error.getField(), error.getDefaultMessage());
+        }
+
+        return errors;
+    }
 }
