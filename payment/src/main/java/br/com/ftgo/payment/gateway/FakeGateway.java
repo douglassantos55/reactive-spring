@@ -34,6 +34,11 @@ public class FakeGateway implements PaymentGateway {
         return paymentType.equals("bank_slip") || paymentType.equals("credit_card");
     }
 
+    public Invoice refund(Invoice invoice, double amount) {
+        invoice.setStatus("refunded");
+        return invoicesRepository.save(invoice);
+    }
+
     public Invoice processPayment(Order order) throws GatewayException {
         Customer customer = customersRepository
                 .findById(order.customer().id())

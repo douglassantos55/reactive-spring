@@ -7,5 +7,7 @@ import br.com.ftgo.payment.exception.GatewayException;
 public interface PaymentGateway {
     Invoice processPayment(Order order) throws GatewayException;
 
+    Invoice refund(Invoice invoice, double amount) throws GatewayException;
+
     boolean supports(String paymentType);
 }
