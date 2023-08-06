@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     total DECIMAL(11, 2) NOT NULL,
     due_date DATETIME NOT NULL,
     status VARCHAR(25) NOT NULL,
+    payment_method_id INT DEFAULT NULL,
     payment_url VARCHAR(255) DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL

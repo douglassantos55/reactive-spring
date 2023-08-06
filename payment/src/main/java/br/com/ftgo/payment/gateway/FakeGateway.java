@@ -44,15 +44,19 @@ public class FakeGateway implements PaymentGateway {
                 .findById(order.customer().id())
                 .orElseGet(() -> createCustomer(order.customer()));
 
+        PaymentMethod paymentMethod = null;
+
         if (order.hasPaymentMethodId()) {
-            if (!methodsRepository.existsByGatewayId(order.paymentMethodId())) {
-                throw new PaymentMethodNotFoundException();
-            }
-        } else if (order.paymentType().equals("credit_card")) {
-            createPaymentMethod(order);
+            paymentMethod = methodsRepository.findByGatewayId(order.paymentMethodId())
+                    .orElseThrow(() -> new PaymentMethodNotFoundException());
+        } else if (order.isCreditCard()) {
+            paymentMethod = createPaymentMethod(order);
         }
 
-        return createInvoice(order);
+        Invoice invoice = createInvoice(order);
+        invoice.setPaymentMethod(paymentMethod);
+
+        return invoice;
     }
 
     private Customer createCustomer(br.com.ftgo.payment.dto.Customer customerDto) {

@@ -29,6 +29,9 @@ public class Invoice {
 
     private String status;
 
+    @ManyToOne(targetEntity = PaymentMethod.class)
+    private PaymentMethod paymentMethod;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -113,5 +116,13 @@ public class Invoice {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 }

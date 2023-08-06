@@ -6,4 +6,8 @@ public record Order(String id, String paymentType, String paymentMethodId, Custo
     public boolean hasPaymentMethodId() {
         return paymentMethodId != null && !paymentMethodId.isEmpty();
     }
+
+    public boolean isCreditCard() {
+        return paymentType.equals("credit_card");
+    }
 }

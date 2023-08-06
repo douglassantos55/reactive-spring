@@ -3,6 +3,8 @@ package br.com.ftgo.payment.repository;
 import br.com.ftgo.payment.entity.PaymentMethod;
 import org.springframework.data.repository.ListCrudRepository;
 
+import java.util.Optional;
+
 public interface PaymentMethodsRepository extends ListCrudRepository<PaymentMethod, Long> {
-    boolean existsByGatewayId(String gatewayId);
+    Optional<PaymentMethod> findByGatewayId(String gatewayId);
 }
