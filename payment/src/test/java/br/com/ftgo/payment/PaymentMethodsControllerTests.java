@@ -57,4 +57,46 @@ public class PaymentMethodsControllerTests {
                         MockMvcResultMatchers.jsonPath("$[0]['paymentType']").value("credit_card")
                 );
     }
+
+    @Test
+    void getInvalid() throws Exception {
+        client.perform(
+                MockMvcRequestBuilders.get("/payment-methods/invalidid")
+                        .accept(MediaType.APPLICATION_JSON)
+        )
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    void getNonExistent() throws Exception {
+        client.perform(
+                        MockMvcRequestBuilders.get("/payment-methods/42069")
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    void get() throws Exception {
+        PaymentMethod method = new PaymentMethod();
+
+        method.setGatewayId("someuuid");
+        method.setDisplayNumber("somemaskednumber");
+        method.setPaymentType("credit_card");
+
+        repository.save(method);
+
+        client.perform(
+                        MockMvcRequestBuilders.get("/payment-methods/" + method.getId())
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpectAll(
+                        MockMvcResultMatchers.status().isOk(),
+                        MockMvcResultMatchers.jsonPath("id").value(method.getId()),
+                        MockMvcResultMatchers.jsonPath("gatewayId").value("someuuid"),
+                        MockMvcResultMatchers.jsonPath("displayNumber").value("somemaskednumber"),
+                        MockMvcResultMatchers.jsonPath("paymentType").value("credit_card"),
+                        MockMvcResultMatchers.jsonPath("description").isEmpty()
+                );
+    }
 }

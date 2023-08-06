@@ -2,10 +2,11 @@ package br.com.ftgo.payment.controller;
 
 import br.com.ftgo.payment.entity.PaymentMethod;
 import br.com.ftgo.payment.repository.PaymentMethodsRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -21,5 +22,10 @@ public class PaymentMethodsController {
     @GetMapping
     public List<PaymentMethod> list() {
         return repository.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public PaymentMethod get(@PathVariable Long id) {
+        return repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 }
