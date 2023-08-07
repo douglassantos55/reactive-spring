@@ -23,6 +23,9 @@ public class PaymentMethod {
 
     private String description;
 
+    @ManyToOne(targetEntity = Customer.class)
+    private Customer customer;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -83,5 +86,13 @@ public class PaymentMethod {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 }

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
 CREATE TABLE IF NOT EXISTS payment_methods (
     id INT PRIMARY KEY,
+    customer_id INT DEFAULT NULL,
     gateway_id VARCHAR(255) NOT NULL UNIQUE,
     display_number VARCHAR(25) NOT NULL,
     payment_type VARCHAR(25) NOT NULL,

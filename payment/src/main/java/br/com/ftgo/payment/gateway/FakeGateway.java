@@ -55,7 +55,7 @@ public class FakeGateway implements PaymentGateway {
             paymentMethod = methodsRepository.findByGatewayId(order.paymentMethodId())
                     .orElseThrow(() -> new PaymentMethodNotFoundException());
         } else if (order.isCreditCard()) {
-            paymentMethod = createPaymentMethod(order);
+            paymentMethod = createPaymentMethod(customer, order.card());
         }
 
         Invoice invoice = createInvoice(order);
@@ -73,13 +73,14 @@ public class FakeGateway implements PaymentGateway {
         return customersRepository.save(customer);
     }
 
-    private PaymentMethod createPaymentMethod(Order order) {
+    private PaymentMethod createPaymentMethod(Customer customer, CardInformation cardInformation) {
         PaymentMethod method = new PaymentMethod();
 
-        method.setPaymentType(order.paymentType());
+        method.setCustomer(customer);
+        method.setPaymentType("credit_card");
         method.setGatewayId(UUID.randomUUID().toString());
 
-        String cardNumber = order.card().number();
+        String cardNumber = cardInformation.number();
         method.setDisplayNumber("XXXX XXXX XXXX " + cardNumber.substring(cardNumber.length() - 4));
 
         return methodsRepository.save(method);
