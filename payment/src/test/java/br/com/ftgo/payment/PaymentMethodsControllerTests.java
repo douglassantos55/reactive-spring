@@ -2,9 +2,12 @@ package br.com.ftgo.payment;
 
 import br.com.ftgo.payment.controller.PaymentMethodsController;
 import br.com.ftgo.payment.entity.PaymentMethod;
+import br.com.ftgo.payment.gateway.PaymentGateway;
 import br.com.ftgo.payment.repository.PaymentMethodsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.mockito.verification.VerificationMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -20,10 +23,13 @@ public class PaymentMethodsControllerTests {
     @Autowired
     private PaymentMethodsRepository repository;
 
+    private PaymentGateway gateway;
+
     @BeforeEach
     public void setUp() {
         repository.deleteAll();
-        client = MockMvcBuilders.standaloneSetup(new PaymentMethodsController(repository)).build();
+        gateway = Mockito.spy(PaymentGateway.class);
+        client = MockMvcBuilders.standaloneSetup( new PaymentMethodsController(gateway,repository)).build();
     }
 
     @Test
@@ -98,5 +104,41 @@ public class PaymentMethodsControllerTests {
                         MockMvcResultMatchers.jsonPath("paymentType").value("credit_card"),
                         MockMvcResultMatchers.jsonPath("description").isEmpty()
                 );
+    }
+
+    @Test
+    void deleteInvalid() throws Exception {
+        client.perform(
+                MockMvcRequestBuilders.delete("/payment-methods/aoeustnh")
+                        .accept(MediaType.APPLICATION_JSON)
+        )
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    void deleteNotFound() throws Exception {
+        client.perform(
+                        MockMvcRequestBuilders.delete("/payment-methods/1523")
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    void deleteExisting() throws Exception {
+        PaymentMethod method = new PaymentMethod();
+        method.setGatewayId("someuuid");
+        method.setPaymentType("credit_card");
+        method.setDisplayNumber("somemaskednumber");
+
+        repository.save(method);
+
+        client.perform(
+                        MockMvcRequestBuilders.delete("/payment-methods/" + method.getId())
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        Mockito.verify(gateway, Mockito.times(1)).deletePaymentMethod(Mockito.any());
     }
 }

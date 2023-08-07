@@ -1,5 +1,6 @@
 package br.com.ftgo.payment.gateway;
 
+import br.com.ftgo.payment.dto.CardInformation;
 import br.com.ftgo.payment.dto.Item;
 import br.com.ftgo.payment.dto.Order;
 import br.com.ftgo.payment.entity.Customer;
@@ -37,6 +38,10 @@ public class FakeGateway implements PaymentGateway {
     public Invoice refund(Invoice invoice, double amount) {
         invoice.setStatus("refunded");
         return invoicesRepository.save(invoice);
+    }
+
+    public void deletePaymentMethod(PaymentMethod method) {
+        // do stuff and all
     }
 
     public Invoice processPayment(Order order) throws GatewayException {
