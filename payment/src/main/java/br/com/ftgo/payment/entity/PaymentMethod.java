@@ -23,6 +23,8 @@ public class PaymentMethod {
 
     private String description;
 
+    private boolean isDefault;
+
     @ManyToOne(targetEntity = Customer.class)
     private Customer customer;
 
@@ -72,6 +74,22 @@ public class PaymentMethod {
         this.description = description;
     }
 
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -86,13 +104,5 @@ public class PaymentMethod {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public Customer getCustomer() {
-        return customer;
-    }
-
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
     }
 }

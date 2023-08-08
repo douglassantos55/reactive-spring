@@ -4,10 +4,10 @@ import br.com.ftgo.payment.controller.PaymentMethodsController;
 import br.com.ftgo.payment.entity.PaymentMethod;
 import br.com.ftgo.payment.gateway.PaymentGateway;
 import br.com.ftgo.payment.repository.PaymentMethodsRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.mockito.verification.VerificationMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -140,5 +140,30 @@ public class PaymentMethodsControllerTests {
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
 
         Mockito.verify(gateway, Mockito.times(1)).deletePaymentMethod(Mockito.any());
+    }
+
+    @Test
+    void changeDefaultMethod() throws Exception {
+        PaymentMethod method = new PaymentMethod();
+        method.setDefault(true);
+        method.setGatewayId("someuuid");
+        method.setPaymentType("credit_card");
+        method.setDisplayNumber("somemaskednumber");
+
+        repository.save(method);
+
+        PaymentMethod other = new PaymentMethod();
+        other.setDefault(false);
+        other.setGatewayId("someotheruuid");
+        other.setPaymentType("credit_card");
+        other.setDisplayNumber("someothermaskednumber");
+
+        repository.save(other);
+
+        client.perform(MockMvcRequestBuilders.put("/payment-methods/" + other.getId()))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+
+        Assertions.assertEquals(other.getId(), repository.findByIsDefault(true).get().getId());
+        Assertions.assertEquals(method.getId(), repository.findByIsDefault(false).get().getId());
     }
 }

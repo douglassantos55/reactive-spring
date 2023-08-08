@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface PaymentMethodsRepository extends ListCrudRepository<PaymentMethod, Long> {
     Optional<PaymentMethod> findByGatewayId(String gatewayId);
+
+    Optional<PaymentMethod> findByIsDefault(boolean isDefault);
 }

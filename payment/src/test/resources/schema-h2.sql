@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS payment_methods (
     display_number VARCHAR(25) NOT NULL,
     payment_type VARCHAR(25) NOT NULL,
     description VARCHAR(255) DEFAULT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT NULL
 );

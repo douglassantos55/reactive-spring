@@ -32,6 +32,20 @@ public class PaymentMethodsController {
         return repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
+    @PutMapping("/{id}")
+    @Transactional
+    public void setDefault(@PathVariable Long id) {
+        PaymentMethod prevMethod = repository.findByIsDefault(true).orElseThrow();
+        prevMethod.setDefault(false);
+        repository.save(prevMethod);
+
+        PaymentMethod defaultMethod = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        defaultMethod.setDefault(true);
+        repository.save(defaultMethod);
+    }
+
     @Transactional
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

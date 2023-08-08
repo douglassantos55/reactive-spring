@@ -76,6 +76,7 @@ public class FakeGateway implements PaymentGateway {
     private PaymentMethod createPaymentMethod(Customer customer, CardInformation cardInformation) {
         PaymentMethod method = new PaymentMethod();
 
+        method.setDefault(true);
         method.setCustomer(customer);
         method.setPaymentType("credit_card");
         method.setGatewayId(UUID.randomUUID().toString());
