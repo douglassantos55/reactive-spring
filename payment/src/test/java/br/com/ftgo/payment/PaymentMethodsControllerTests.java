@@ -1,8 +1,10 @@
 package br.com.ftgo.payment;
 
 import br.com.ftgo.payment.controller.PaymentMethodsController;
+import br.com.ftgo.payment.entity.Customer;
 import br.com.ftgo.payment.entity.PaymentMethod;
 import br.com.ftgo.payment.gateway.PaymentGateway;
+import br.com.ftgo.payment.repository.CustomersRepository;
 import br.com.ftgo.payment.repository.PaymentMethodsRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,19 +25,30 @@ public class PaymentMethodsControllerTests {
     @Autowired
     private PaymentMethodsRepository repository;
 
+    @Autowired
+    private CustomersRepository customersRepository;
+
     private PaymentGateway gateway;
 
     @BeforeEach
     public void setUp() {
         repository.deleteAll();
+        customersRepository.deleteAll();
+
         gateway = Mockito.spy(PaymentGateway.class);
         client = MockMvcBuilders.standaloneSetup( new PaymentMethodsController(gateway,repository)).build();
     }
 
     @Test
     void listEmpty() throws Exception {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setGatewayId("someuuid");
+
+        customersRepository.save(customer);
+
         client.perform(
-                MockMvcRequestBuilders.get("/payment-methods")
+                MockMvcRequestBuilders.get("/payment-methods?customer=" + customer.getId())
                         .accept(MediaType.APPLICATION_JSON)
         )
                 .andExpect(MockMvcResultMatchers.status().isOk())
@@ -44,23 +57,46 @@ public class PaymentMethodsControllerTests {
 
     @Test
     void listNotEmpty() throws Exception {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setGatewayId("someuuid");
+
+        customersRepository.save(customer);
+
         PaymentMethod method = new PaymentMethod();
 
         method.setGatewayId("someuuid");
         method.setDisplayNumber("somemaskednumber");
         method.setPaymentType("credit_card");
+        method.setCustomer(customer);
 
         repository.save(method);
 
+        Customer customer2 = new Customer();
+        customer2.setId(2L);
+        customer2.setGatewayId("someotheruuid");
+
+        customersRepository.save(customer2);
+
+        PaymentMethod method2 = new PaymentMethod();
+
+        method2.setGatewayId("someotheruuid");
+        method2.setDisplayNumber("someothermaskednumber");
+        method2.setPaymentType("credit_card");
+        method2.setCustomer(customer2);
+
+        repository.save(method2);
+
         client.perform(
-                MockMvcRequestBuilders.get("/payment-methods")
+                MockMvcRequestBuilders.get("/payment-methods?customer=" + customer.getId())
                         .accept(MediaType.APPLICATION_JSON)
         )
                 .andExpectAll(
                         MockMvcResultMatchers.status().isOk(),
                         MockMvcResultMatchers.jsonPath("$[0]['gatewayId']").value("someuuid"),
                         MockMvcResultMatchers.jsonPath("$[0]['displayNumber']").value("somemaskednumber"),
-                        MockMvcResultMatchers.jsonPath("$[0]['paymentType']").value("credit_card")
+                        MockMvcResultMatchers.jsonPath("$[0]['paymentType']").value("credit_card"),
+                        MockMvcResultMatchers.jsonPath("$[1]").doesNotExist()
                 );
     }
 

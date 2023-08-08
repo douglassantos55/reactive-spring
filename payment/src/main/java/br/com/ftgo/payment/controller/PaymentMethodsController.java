@@ -3,6 +3,7 @@ package br.com.ftgo.payment.controller;
 import br.com.ftgo.payment.entity.PaymentMethod;
 import br.com.ftgo.payment.gateway.PaymentGateway;
 import br.com.ftgo.payment.repository.PaymentMethodsRepository;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +24,8 @@ public class PaymentMethodsController {
     }
 
     @GetMapping
-    public List<PaymentMethod> list() {
-        return repository.findAll();
+    public List<PaymentMethod> list(@RequestParam("customer") @NotNull Long customerId) {
+        return repository.findByCustomerId(customerId);
     }
 
     @GetMapping("/{id}")
