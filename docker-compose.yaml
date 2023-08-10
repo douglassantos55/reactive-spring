@@ -11,6 +11,15 @@ services:
       - 'rabbitmq:/var/lib/rabbitmq'
       - './rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf'
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks:
+      - infra
+
 volumes:
   rabbitmq:
     driver: local

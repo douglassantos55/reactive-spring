@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 5s
+  scrape_timeout: 3s
+
+scrape_configs:
+  - job_name: customers
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['customers:8080']
+
+  - job_name: restauraunts
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['restaurants:8080']
+
+  - job_name: orders
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['orders:8080']
+
+  - job_name: payment
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['payment:8080']
+
