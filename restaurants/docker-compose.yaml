@@ -12,9 +12,10 @@ services:
     volumes:
       - '.:/app'
     environment:
-      MONGODB_HOSTNAME: 'mongo'
+      MONGODB_HOSTNAME: '${MONGODB_HOSTNAME:-localhost}'
+      ZIPKIN_URL: '${ZIPKIN_URL:-http://localhost:9411}'
 
-      AMQP_HOSTNAME: '${AMQP_HOSTNAME:-rabbitmq}'
+      AMQP_HOSTNAME: '${AMQP_HOSTNAME:-localhost}'
       AMQP_PORT: '${AMQP_PORT:-5672}'
       AMQP_USERNAME: '${AMQP_USERNAME:-guest}'
       AMQP_PASSWORD: '${AMQP_PASSWORD:-guest}'

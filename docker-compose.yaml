@@ -20,6 +20,13 @@ services:
     networks:
       - infra
 
+  zipkin:
+    image: 'openzipkin/zipkin'
+    ports:
+      - '9411:9411'
+    networks:
+      - infra
+
 volumes:
   rabbitmq:
     driver: local
