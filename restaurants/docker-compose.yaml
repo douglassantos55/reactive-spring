@@ -1,0 +1,49 @@
+version: '3.1'
+services:
+  restaurants:
+    image: 'eclipse-temurin:17-jdk-alpine'
+    working_dir: '/app'
+    command: ["./mvnw", "spring-boot:run"]
+    ports:
+      - '8083:8080'
+    networks:
+      - infra
+      - restaurants
+    volumes:
+      - '.:/app'
+    environment:
+      MONGODB_HOSTNAME: 'mongo'
+
+      AMQP_HOSTNAME: '${AMQP_HOSTNAME:-rabbitmq}'
+      AMQP_PORT: '${AMQP_PORT:-5672}'
+      AMQP_USERNAME: '${AMQP_USERNAME:-guest}'
+      AMQP_PASSWORD: '${AMQP_PASSWORD:-guest}'
+
+  mongo:
+    image: 'mongo'
+    ports:
+      - '27017:27017'
+    networks:
+      - restaurants
+    volumes:
+      - 'mongo:/data/db'
+
+  mongo-express:
+    image: 'mongo-express'
+    ports:
+      - '8081:8081'
+    depends_on:
+      - 'mongo'
+    networks:
+      - restaurants
+
+volumes:
+  mongo:
+    driver: local
+
+networks:
+  restaurants:
+    driver: bridge
+  infra:
+    name: fgto-infra
+    external: true
