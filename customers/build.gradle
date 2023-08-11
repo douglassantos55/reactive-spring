@@ -23,6 +23,8 @@ dependencies {
 	implementation 'org.springframework.amqp:spring-rabbit'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-zipkin'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'org.postgresql:postgresql'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

@@ -12,6 +12,8 @@ services:
     volumes:
       - '.:/app'
     environment:
+      ZIPKIN_URL: '${ZIPKIN_URL:-http://localhost:9411}'
+
       AMQP_HOST: '${AMQP_HOST:-localhost}'
       AMQP_PORT: '${AMQP_PORT:-3356}'
       AMQP_USERNAME: '${AMQP_USERNAME:-guest}'
