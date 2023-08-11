@@ -1,0 +1,49 @@
+version: '3'
+services:
+  orders:
+    image: 'eclipse-temurin:17-jdk-alpine'
+    working_dir: '/app'
+    command: ["./mvnw", "spring-boot:run"]
+    ports:
+      - '8081:8080'
+    networks:
+      - infra
+      - orders
+    volumes:
+      - '.:/app'
+    environment:
+      MONGODB_HOST: '${DATABASE_HOSTNAME:-localhost}'
+      MONGODB_DATABASE: '${DATABASE_NAME:-orders}'
+
+      AMQP_HOSTNAME: '${AMQP_HOSTNAME:-localhost}'
+      AMQP_PORT: '${AMQP_PORT:-5672}'
+      AMQP_USERNAME: '${AMQP_USERNAME:-guest}'
+      AMQP_PASSWORD: '${AMQP_PASSWORD:-guest}'
+
+  database:
+    image: 'mongo'
+    networks:
+      - orders
+    volumes:
+      - 'database:/data/db'
+
+  dbadmin:
+    image: 'mongo-express'
+    ports:
+      - '9081:8081'
+    depends_on:
+      - 'database'
+    networks:
+      - orders
+
+volumes:
+  database:
+    driver: local
+
+networks:
+  orders:
+    driver: bridge
+
+  infra:
+    name: fgto-infra
+    external: true
