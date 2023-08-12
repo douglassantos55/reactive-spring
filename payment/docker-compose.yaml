@@ -1,0 +1,50 @@
+version: '3'
+services:
+  payment:
+    image: 'eclipse-temurin:17-jdk-alpine'
+    working_dir: '/app'
+    command: ['./mvnw', 'spring-boot:run']
+    environment:
+      AMQP_PORT: '${AMQP_PORT:-5672}'
+      AMQP_HOSTNAME: '${AMQP_HOSTNAME:-localhost}'
+      AMQP_USERNAME: '${AMQP_USERNAME:-guest}'
+      AMQP_PASSWORD: '${AMQP_PASSWORD:-guest}'
+
+      DATABASE_HOST: '${DATABASE_HOST:-localhost}'
+      DATABASE_USERNAME: '${DATABASE_USERNAME:-username}'
+      DATABASE_PASSWORD: '${DATABASE_PASSWORD:-password}'
+      DATABASE_NAME: '${DATABASE_NAME:-payment}'
+    volumes:
+      - '.:/app'
+    ports:
+      - '8082:8080'
+    networks:
+      - payment
+      - infra
+    depends_on:
+      - 'database'
+
+  database:
+    image: 'postgres:15'
+    networks:
+      - payment
+    volumes:
+      - 'postgres:/var/lib/postgres'
+    environment:
+      POSTGRES_USER: '${DATABASE_USER:-username}'
+      POSTGRES_PASSWORD: '${DATABASE_PASSWORD:-password}'
+      POSTGRES_DB: '${DATABASE_NAME:-payment}'
+    ports:
+      - '${DATABASE_PORT_FORWARD:-5432}:${DATABASE_PORT:-5432}'
+
+volumes:
+  postgres:
+    driver: local
+
+networks:
+  payment:
+    driver: bridge
+
+  infra:
+    name: fgto-infra
+    external: true
