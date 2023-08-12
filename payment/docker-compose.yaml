@@ -5,6 +5,8 @@ services:
     working_dir: '/app'
     command: ['./mvnw', 'spring-boot:run']
     environment:
+      ZIPKIN_URL: '${ZIPKIN_URL:-http://localhost:9411}'
+
       AMQP_PORT: '${AMQP_PORT:-5672}'
       AMQP_HOSTNAME: '${AMQP_HOSTNAME:-localhost}'
       AMQP_USERNAME: '${AMQP_USERNAME:-guest}'
