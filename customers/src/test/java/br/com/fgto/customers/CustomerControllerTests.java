@@ -3,7 +3,6 @@ package br.com.fgto.customers;
 import br.com.fgto.customers.entity.Address;
 import br.com.fgto.customers.repository.CustomerRepository;
 import br.com.fgto.customers.entity.Customer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

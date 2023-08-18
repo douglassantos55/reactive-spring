@@ -8,7 +8,6 @@ import br.com.fgto.customers.repository.MessageRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +19,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/customers")
 public class CustomerController {
-    @Autowired
-    private RabbitTemplate template;
-
     @Autowired
     private CustomerRepository repository;
 
