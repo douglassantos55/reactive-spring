@@ -5,6 +5,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 @Entity
@@ -76,8 +77,16 @@ public class Message {
         lastAttempt = Instant.now();
     }
 
-    public String getContext() {
-        return context;
+    public Map<String, String> getContext() {
+        Map<String, String> map = new HashMap<>();
+        String[] parts = context.split(";");
+
+        for (String entry : parts) {
+            String[] pair = entry.split(":");
+            map.put(pair[0], pair[1]);
+        }
+
+        return map;
     }
 
     public void setContext(String key, String value) {

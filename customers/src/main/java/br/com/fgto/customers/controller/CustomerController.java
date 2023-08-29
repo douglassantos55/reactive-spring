@@ -3,13 +3,8 @@ package br.com.fgto.customers.controller;
 import br.com.fgto.customers.exception.ResourceNotFoundException;
 import br.com.fgto.customers.repository.CustomerRepository;
 import br.com.fgto.customers.entity.Customer;
-import br.com.fgto.customers.entity.Message;
-import br.com.fgto.customers.repository.MessageRepository;
+import br.com.fgto.customers.scheduled.Messenger;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.propagation.TextMapSetter;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,13 +21,7 @@ public class CustomerController {
     private CustomerRepository repository;
 
     @Autowired
-    private MessageRepository messageRepository;
-
-    @Autowired
-    private ObjectMapper mapper;
-
-    @Autowired
-    private OpenTelemetry telemetry;
+    private Messenger messenger;
 
     @GetMapping
     public List<Customer> list() {
@@ -51,18 +40,7 @@ public class CustomerController {
     @ResponseStatus(HttpStatus.CREATED)
     public Customer create(@Valid @RequestBody Customer customer) throws JsonProcessingException {
         customer = repository.save(customer);
-
-        Message message = new Message();
-
-        message.setExchange("notifications.exchange");
-        message.setRoutingKey("customer.created");
-        message.setBody(mapper.writeValueAsBytes(customer));
-
-        telemetry.getPropagators().getTextMapPropagator().inject(Context.current(), message, (carrier, key, value) ->
-                carrier.setContext(key, value)
-        );
-
-        messageRepository.save(message);
+        messenger.saveMessage("customer.created", "notifications.exchange", customer);
 
         return customer;
     }
@@ -77,14 +55,7 @@ public class CustomerController {
         customer.setDeliveryAddress(data.getDeliveryAddress());
 
         customer = repository.save(customer);
-
-        Message message = new Message();
-
-        message.setExchange("notifications.exchange");
-        message.setRoutingKey("customer.updated");
-        message.setBody(mapper.writeValueAsBytes(customer));
-
-        messageRepository.save(message);
+        messenger.saveMessage("customer.updated", "notifications.exchange", customer);
 
         return customer;
     }
@@ -97,14 +68,7 @@ public class CustomerController {
         customer.setDeletedAt(Instant.now());
 
         repository.save(customer);
-
-        Message message = new Message();
-
-        message.setExchange("notifications.exchange");
-        message.setRoutingKey("customer.deleted");
-        message.setBody(mapper.writeValueAsBytes(customer));
-
-        messageRepository.save(message);
+        messenger.saveMessage("customer.deleted", "notifications.exchange", customer);
 
         return customer;
     }
