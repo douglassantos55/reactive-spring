@@ -7,6 +7,9 @@ import br.com.fgto.customers.entity.Message;
 import br.com.fgto.customers.repository.MessageRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapSetter;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +30,9 @@ public class CustomerController {
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    private OpenTelemetry telemetry;
 
     @GetMapping
     public List<Customer> list() {
@@ -51,6 +57,10 @@ public class CustomerController {
         message.setExchange("notifications.exchange");
         message.setRoutingKey("customer.created");
         message.setBody(mapper.writeValueAsBytes(customer));
+
+        telemetry.getPropagators().getTextMapPropagator().inject(Context.current(), message, (carrier, key, value) ->
+                carrier.setContext(key, value)
+        );
 
         messageRepository.save(message);
 

@@ -5,6 +5,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.Map;
 
 @Entity
 @Table(name = "messages")
@@ -19,6 +20,8 @@ public class Message {
     private String routingKey;
 
     private String exchange;
+
+    private String context;
 
     @CreatedDate
     private Instant createdAt;
@@ -71,5 +74,16 @@ public class Message {
 
     public void attempt() {
         lastAttempt = Instant.now();
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public void setContext(String key, String value) {
+        if (context == null) {
+            context = "";
+        }
+        context += String.format("%s:%s;", key, value);
     }
 }

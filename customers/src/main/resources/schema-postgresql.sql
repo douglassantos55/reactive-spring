@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS messages (
     routing_key VARCHAR(104) NOT NULL,
     exchange VARCHAR(100) NOT NULL,
     body BYTEA NOT NULL,
+    context TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_attempt TIMESTAMP DEFAULT NULL
 );
