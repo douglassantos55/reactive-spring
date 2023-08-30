@@ -1,14 +1,14 @@
 package br.com.ftgo.orders.event.handler;
 
 import br.com.ftgo.orders.entity.Customer;
+import br.com.ftgo.orders.event.AmqpMessageContextExtractor;
 import br.com.ftgo.orders.repository.CustomersRepository;
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.context.propagation.TextMapGetter;
+import io.opentelemetry.context.propagation.TextMapPropagator;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.Exchange;
@@ -29,23 +29,10 @@ public class CustomerEventsHandler {
     private Tracer tracer;
 
     @Autowired
-    private OpenTelemetry telemetry;
+    private TextMapPropagator propagator;
 
-    private TextMapGetter<Message> getter;
-
-    public CustomerEventsHandler() {
-        getter = new TextMapGetter<>() {
-            @Override
-            public Iterable<String> keys(Message o) {
-                return o.getMessageProperties().getHeaders().keySet();
-            }
-
-            @Override
-            public String get(Message o, String s) {
-                return o.getMessageProperties().getHeader(s);
-            }
-        };
-    }
+    @Autowired
+    private AmqpMessageContextExtractor getter;
 
     @RabbitListener(bindings = {
             @QueueBinding(
@@ -60,20 +47,17 @@ public class CustomerEventsHandler {
             )
     })
     public void handleCreated(Customer customer, Message message) {
-        Context context = telemetry.getPropagators().getTextMapPropagator().extract(Context.current(), message, getter);
+        Context context = propagator.extract(Context.current(), message, getter);
 
         try (Scope scope = context.makeCurrent()) {
             Span span = tracer
                     .spanBuilder(message.getMessageProperties().getReceivedRoutingKey())
                     .setSpanKind(SpanKind.CONSUMER)
+                    .setAttribute("mr", InetAddress.getLoopbackAddress().getHostAddress())
                     .startSpan();
 
             try (Scope spanScope = span.makeCurrent()) {
-                span.setAttribute("mr", InetAddress.getLoopbackAddress().getHostAddress());
-                repository.save(customer).block();
-            } catch (Exception exception) {
-                span.recordException(exception);
-                throw exception;
+                repository.save(customer).doOnError(exception -> span.recordException(exception)).block();
             } finally {
                 span.end();
             }
@@ -85,7 +69,20 @@ public class CustomerEventsHandler {
             exchange = @Exchange(name = "notifications.exchange", type = ExchangeTypes.TOPIC),
             key = "customer.deleted"
     ))
-    public void handleDeleted(Customer customer) {
-        repository.delete(customer).block();
+    public void handleDeleted(Customer customer, Message message) {
+        Context context = propagator.extract(Context.current(), message, getter);
+
+        try (Scope scope = context.makeCurrent()) {
+            Span span = tracer.spanBuilder(message.getMessageProperties().getReceivedRoutingKey())
+                    .setSpanKind(SpanKind.CONSUMER)
+                    .setAttribute("mr", InetAddress.getLoopbackAddress().getHostAddress())
+                    .startSpan();
+
+            try (Scope spanScope = span.makeCurrent()) {
+                repository.delete(customer).doOnError(exception -> span.recordException(exception)).block();
+            } finally {
+                span.end();
+            }
+        }
     }
 }
