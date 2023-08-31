@@ -1,4 +1,4 @@
-package br.com.fgto.customers.scheduled;
+package br.com.fgto.customers.message;
 
 import br.com.fgto.customers.entity.Message;
 import br.com.fgto.customers.repository.MessageRepository;
@@ -14,20 +14,16 @@ public class Messenger {
 
     private ObjectMapper mapper;
 
-    private TextMapPropagator propagator;
-
-    private MessageContextInjector injector;
+    private ContextHandler contextHandler;
 
     public Messenger(
             ObjectMapper mapper,
             MessageRepository repository,
-            TextMapPropagator propagator,
-            MessageContextInjector injector
+            ContextHandler contextHandler
     ) {
         this.mapper = mapper;
-        this.injector = injector;
-        this.propagator = propagator;
         this.repository = repository;
+        this.contextHandler = contextHandler;
     }
 
     public void saveMessage(String routingKey, String exchange, Object value) throws JsonProcessingException {
@@ -37,7 +33,7 @@ public class Messenger {
         message.setExchange(exchange);
         message.setBody(mapper.writeValueAsBytes(value));
 
-        propagator.inject(Context.current(), message, injector);
+        contextHandler.injectContext(message);
 
         repository.save(message);
     }

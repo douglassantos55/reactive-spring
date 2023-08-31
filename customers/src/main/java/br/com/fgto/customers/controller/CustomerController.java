@@ -3,7 +3,7 @@ package br.com.fgto.customers.controller;
 import br.com.fgto.customers.exception.ResourceNotFoundException;
 import br.com.fgto.customers.repository.CustomerRepository;
 import br.com.fgto.customers.entity.Customer;
-import br.com.fgto.customers.scheduled.Messenger;
+import br.com.fgto.customers.message.Messenger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
