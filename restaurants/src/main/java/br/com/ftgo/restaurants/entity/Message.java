@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @Document
 public class Message {
@@ -16,6 +18,8 @@ public class Message {
     private String key;
 
     private byte[] body;
+
+    private String context;
 
     @CreatedDate
     private Instant createdAt;
@@ -52,6 +56,26 @@ public class Message {
 
     public void setBody(byte[] body) {
         this.body = body;
+    }
+
+    public Map<String, String> getContext() {
+        Map<String, String> map = new HashMap<>();
+        if (context != null) {
+            String[] parts = context.split(";");
+
+            for (String entry : parts) {
+                String[] pair = entry.split(":");
+                map.put(pair[0], pair[1]);
+            }
+        }
+        return map;
+    }
+
+    public void setContext(String key, String value) {
+        if (context == null) {
+            context = "";
+        }
+        context += String.format("%s:%s;", key, value);
     }
 
     public Instant getCreatedAt() {

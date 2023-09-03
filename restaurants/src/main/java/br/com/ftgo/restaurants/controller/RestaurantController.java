@@ -1,15 +1,11 @@
 package br.com.ftgo.restaurants.controller;
 
-import br.com.ftgo.restaurants.entity.Message;
 import br.com.ftgo.restaurants.entity.Restaurant;
 import br.com.ftgo.restaurants.exception.ResourceNotFoundException;
-import br.com.ftgo.restaurants.repository.MessageRepository;
+import br.com.ftgo.restaurants.message.Messenger;
 import br.com.ftgo.restaurants.repository.RestaurantRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +24,7 @@ public class RestaurantController {
     private RestaurantRepository repository;
 
     @Autowired
-    private MessageRepository messageRepository;
-
-    @Autowired
-    private DataBufferFactory bufferFactory;
-
-    @Autowired
-    private ObjectMapper mapper;
+    private Messenger messenger;
 
     @GetMapping
     public Flux<Restaurant> list() {
@@ -57,24 +47,16 @@ public class RestaurantController {
                     Path uploadPath = Paths.get("upload-dir").resolve(file.filename()).normalize().toAbsolutePath();
                     return file.transferTo(uploadPath).thenReturn(uploadPath);
                 })
-                .doOnNext(uploadPath -> {
-                    restaurant.setLogo(uploadPath.toUri().toString());
-                })
+                .doOnNext(uploadPath -> restaurant.setLogo(uploadPath.toUri().toString()))
                 .thenReturn(restaurant)
                 .flatMap(repository::save)
-                .flatMap(result -> {
-                    try {
-                        Message message = new Message();
-
-                        message.setKey("restaurant.created");
-                        message.setExchange("notifications.exchange");
-                        message.setBody(mapper.writeValueAsBytes(result));
-
-                        return messageRepository.save(message).thenReturn(result);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                });
+                .flatMap(result ->
+                        messenger.saveMessage(
+                                "restaurant.created",
+                                "notifications.exchange",
+                                result
+                        ).thenReturn(result)
+                );
     }
 
     @PutMapping("/{id}")
@@ -83,7 +65,10 @@ public class RestaurantController {
                 .flatMap(restaurant ->
                     logoFile
                             .flatMap(file -> {
-                                Path uploadPath = Paths.get("upload-dir").resolve(file.filename()).normalize().toAbsolutePath();
+                                Path uploadPath = Paths.get("upload-dir")
+                                        .resolve(file.filename())
+                                        .normalize()
+                                        .toAbsolutePath();
                                 return file.transferTo(uploadPath).thenReturn(uploadPath);
                             })
                             .doOnNext(uploadPath -> restaurant.setLogo(uploadPath.toUri().toString()))
@@ -101,19 +86,13 @@ public class RestaurantController {
                     return restaurant;
                 })
                 .flatMap(repository::save)
-                .flatMap(result -> {
-                    try {
-                        Message message = new Message();
-
-                        message.setKey("restaurant.updated");
-                        message.setExchange("notifications.exchange");
-                        message.setBody(mapper.writeValueAsBytes(result));
-
-                        return messageRepository.save(message).thenReturn(result);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                });
+                .doOnNext(result ->
+                        messenger.saveMessage(
+                                "restaurant.updated",
+                                "notifications.exchange",
+                                result
+                        )
+                );
     }
 
     @Transactional
@@ -125,18 +104,12 @@ public class RestaurantController {
                     restaurant.setDeletedAt(Instant.now());
                     return repository.save(restaurant);
                 })
-                .flatMap(restaurant -> {
-                    try {
-                        Message message = new Message();
-
-                        message.setKey("restaurant.deleted");
-                        message.setExchange("notifications.exchange");
-                        message.setBody(mapper.writeValueAsBytes(restaurant));
-
-                        return messageRepository.save(message).thenReturn(restaurant);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                });
+                .doOnNext(restaurant ->
+                        messenger.saveMessage(
+                                "restaurant.deleted",
+                                "notifications.exchange",
+                                restaurant
+                        )
+                );
     }
 }
