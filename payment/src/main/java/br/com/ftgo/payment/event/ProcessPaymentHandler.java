@@ -2,14 +2,11 @@ package br.com.ftgo.payment.event;
 
 import br.com.ftgo.payment.dto.Order;
 import br.com.ftgo.payment.entity.Invoice;
-import br.com.ftgo.payment.entity.Message;
-import br.com.ftgo.payment.exception.GatewayException;
 import br.com.ftgo.payment.exception.UnexpectedPaymentTypeException;
 import br.com.ftgo.payment.gateway.PaymentGateway;
-import br.com.ftgo.payment.repository.MessagesRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
@@ -20,18 +17,14 @@ import org.springframework.stereotype.Component;
 public class ProcessPaymentHandler {
     private PaymentGateway gateway;
 
-    private MessagesRepository messagesRepository;
+    private Messenger messenger;
 
-    private ObjectMapper mapper;
+    private ContextHandler contextHandler;
 
-    public ProcessPaymentHandler(
-            PaymentGateway gateway,
-            MessagesRepository messagesRepository,
-            ObjectMapper mapper
-    ) {
+    public ProcessPaymentHandler(PaymentGateway gateway, Messenger messenger, ContextHandler contextHandler) {
         this.gateway = gateway;
-        this.mapper = mapper;
-        this.messagesRepository = messagesRepository;
+        this.messenger = messenger;
+        this.contextHandler = contextHandler;
     }
 
     @Transactional
@@ -40,31 +33,25 @@ public class ProcessPaymentHandler {
             exchange = @Exchange(name = "payment.exchange"),
             key = "payment.process"
     ))
-    public void processPayment(Order order) throws GatewayException {
-        try {
-            if (!gateway.supports(order.paymentType())) {
-                throw new UnexpectedPaymentTypeException();
+    public void processPayment(Order order, Message message) {
+        contextHandler.withMessageContext(message, span -> {
+            try {
+                if (!gateway.supports(order.paymentType())) {
+                    throw new UnexpectedPaymentTypeException();
+                }
+
+                Invoice invoice = gateway.processPayment(order);
+                messenger.saveMessage("invoice.created", "notifications.exchange", invoice);
+            } catch (Exception exception) {
+                try {
+                    span.recordException(exception);
+                    messenger.saveMessage("payment.failed", "notifications.exchange", order);
+                } catch (JsonProcessingException e) {
+                    span.recordException(e);
+                }
+            } finally {
+                return null;
             }
-
-            Invoice invoice = gateway.processPayment(order);
-            saveNotification("invoice.created", invoice);
-        } catch (GatewayException exception) {
-            saveNotification("payment.failed", order);
-            throw exception;
-        }
-    }
-
-    private void saveNotification(String routingKey, Object body) {
-        try {
-            Message message = new Message();
-
-            message.setRoutingKey(routingKey);
-            message.setExchange("notifications.exchange");
-            message.setBody(mapper.writeValueAsBytes(body));
-
-            messagesRepository.save(message);
-        } catch (JsonProcessingException exception) {
-            // could not do stuff...
-        }
+        });
     }
 }

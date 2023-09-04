@@ -49,7 +49,7 @@ public class ProcessPaymentHandlerTests {
 
         Order order = new Order("order1", "paypal", "", customer, cardInfo, items);
 
-        Assertions.assertThrows(UnexpectedPaymentTypeException.class, () -> handler.processPayment(order));
+        Assertions.assertThrows(UnexpectedPaymentTypeException.class, () -> handler.processPayment(order, null));
         Assertions.assertTrue(messagesRepository.findByRoutingKey("payment.failed").isEmpty());
     }
 
@@ -64,7 +64,7 @@ public class ProcessPaymentHandlerTests {
 
         Order order = new Order("order2", "bank_slip", "", customer, cardInfo, items);
 
-        Assertions.assertDoesNotThrow(() -> handler.processPayment(order));
+        Assertions.assertDoesNotThrow(() -> handler.processPayment(order, null));
         Assertions.assertFalse(messagesRepository.findByRoutingKey("invoice.created").isEmpty());
 
         // Make sure no payment method is created for bank_slip
@@ -82,7 +82,7 @@ public class ProcessPaymentHandlerTests {
 
         Order order = new Order("order3", "credit_card", "", customer, cardInfo, items);
 
-        Assertions.assertDoesNotThrow(() -> handler.processPayment(order));
+        Assertions.assertDoesNotThrow(() -> handler.processPayment(order, null));
         Assertions.assertFalse(messagesRepository.findByRoutingKey("invoice.created").isEmpty());
 
         // Make sure payment method is created for credit_card
@@ -100,7 +100,7 @@ public class ProcessPaymentHandlerTests {
 
         Order order = new Order("order4", "credit_card", "t452U2", customer, cardInfo, items);
 
-        Assertions.assertThrows(PaymentMethodNotFoundException.class, () -> handler.processPayment(order));
+        Assertions.assertThrows(PaymentMethodNotFoundException.class, () -> handler.processPayment(order, null));
         Assertions.assertTrue(messagesRepository.findByRoutingKey("invoice.created").isEmpty());
 
         // Make sure payment method is not recreated
@@ -126,7 +126,7 @@ public class ProcessPaymentHandlerTests {
 
         Order order = new Order("order4", "credit_card", method.getGatewayId(), customer, cardInfo, items);
 
-        Assertions.assertDoesNotThrow(() -> handler.processPayment(order));
+        Assertions.assertDoesNotThrow(() -> handler.processPayment(order, null));
         Assertions.assertFalse(messagesRepository.findByRoutingKey("invoice.created").isEmpty());
 
         // Make sure payment method is not recreated

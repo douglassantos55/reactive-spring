@@ -5,6 +5,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @Entity
 @Table(name = "messages")
@@ -19,6 +21,8 @@ public class Message {
     private String routingKey;
 
     private byte[] body;
+
+    private String context;
 
     @CreatedDate
     private Instant createdAt;
@@ -55,6 +59,28 @@ public class Message {
 
     public void setBody(byte[] body) {
         this.body = body;
+    }
+
+    public Map<String, String> getContext() {
+        Map<String, String> ctx = new HashMap<>();
+
+        if (context != null) {
+            String[] parts = context.split(";");
+
+            for (String part : parts) {
+                String[] keyValue = part.split(":");
+                ctx.put(keyValue[0], keyValue[1]);
+            }
+        }
+
+        return ctx;
+    }
+
+    public void setContext(String key, String value) {
+        if (context == null) {
+            context = "";
+        }
+        context += key + ":" + value + ";";
     }
 
     public Instant getCreatedAt() {

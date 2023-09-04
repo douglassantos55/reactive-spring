@@ -15,24 +15,33 @@ public class MessageProcessor {
 
     private RabbitTemplate template;
 
-    public MessageProcessor(MessagesRepository repository, RabbitTemplate template) {
+    private ContextHandler contextHandler;
+
+    public MessageProcessor(MessagesRepository repository, ContextHandler contextHandler, RabbitTemplate template) {
         this.template = template;
         this.repository = repository;
+        this.contextHandler = contextHandler;
     }
 
     @Scheduled(fixedRate = 1000)
     public void processMessages() {
         for (br.com.ftgo.payment.entity.Message message : repository.findAll()) {
-            try {
-                Message event = new Message(message.getBody());
-                event.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            contextHandler.withMessageContext(message, span -> {
+                try {
+                    Message event = new Message(message.getBody());
+                    event.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
 
-                template.send(message.getExchange(), message.getRoutingKey(), event);
-                repository.delete(message);
-            } catch (Exception exception) {
-                message.setLastAttempt(Instant.now());
-                repository.save(message);
-            }
+                    contextHandler.inject(event);
+
+                    template.send(message.getExchange(), message.getRoutingKey(), event);
+                    repository.delete(message);
+                } catch (Exception exception) {
+                    message.setLastAttempt(Instant.now());
+                    repository.save(message);
+                } finally {
+                    return null;
+                }
+            });
         }
     }
 }
