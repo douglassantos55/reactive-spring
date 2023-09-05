@@ -2,6 +2,7 @@ package br.com.ftgo.orders.controller;
 
 import br.com.ftgo.orders.dto.OrderDTO;
 import br.com.ftgo.orders.entity.*;
+import br.com.ftgo.orders.event.Messenger;
 import br.com.ftgo.orders.exception.RelationMissingException;
 import br.com.ftgo.orders.exception.ResourceNotFoundException;
 import br.com.ftgo.orders.exception.ValidationException;
@@ -10,7 +11,6 @@ import br.com.ftgo.orders.repository.MessagesRepository;
 import br.com.ftgo.orders.repository.OrdersRepository;
 import br.com.ftgo.orders.repository.RestaurantsRepository;
 import br.com.ftgo.orders.validation.OrderValidator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -21,8 +21,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.lang.reflect.Method;
 
 @RestController
 @RequestMapping("/orders")
@@ -37,13 +35,10 @@ public class OrderController {
     private RestaurantsRepository restaurantsRepository;
 
     @Autowired
-    private MessagesRepository messagesRepository;
-
-    @Autowired
-    private ObjectMapper mapper;
-
-    @Autowired
     private OrderValidator orderValidator;
+
+    @Autowired
+    private Messenger messenger;
 
     @GetMapping
     public Flux<Order> list(Order orderSearchCriteria, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "50") int perPage) {
@@ -119,31 +114,8 @@ public class OrderController {
                 })
                 .map(order -> Order.from(order))
                 .flatMap(repository::save)
-                .flatMap(order -> {
-                    try {
-                        Message message = new Message();
-                        message.setExchange("payment.exchange");
-                        message.setRoutingKey("payment.process");
-                        message.setBody(mapper.writeValueAsBytes(order));
-
-                        return messagesRepository.save(message).thenReturn(order);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                })
-                .flatMap(order -> {
-                    try {
-                        Message message = new Message();
-
-                        message.setRoutingKey("order.created");
-                        message.setExchange("notifications.exchange");
-                        message.setBody(mapper.writeValueAsBytes(order));
-
-                        return messagesRepository.save(message).thenReturn(order);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                });
+                .flatMap(order -> messenger.saveMessage("payment.process", "payment.exchange", order).thenReturn(order))
+                .flatMap(order -> messenger.saveMessage("order.created", "notifications.exchange", order).thenReturn(order));
     }
 
     @DeleteMapping("/{id}")
@@ -157,18 +129,6 @@ public class OrderController {
                     return order;
                 })
                 .flatMap(repository::save)
-                .flatMap(order -> {
-                    try {
-                        Message message = new Message();
-
-                        message.setRoutingKey("order.cancelled");
-                        message.setExchange("notifications.exchange");
-                        message.setBody(mapper.writeValueAsBytes(order));
-
-                        return messagesRepository.save(message).thenReturn(order);
-                    } catch (JsonProcessingException exception) {
-                        return Mono.error(exception);
-                    }
-                });
+                .flatMap(order -> messenger.saveMessage("order.cancelled", "notifications.exchange", order).thenReturn(order));
     }
 }

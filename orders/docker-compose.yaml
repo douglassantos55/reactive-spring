@@ -22,7 +22,7 @@ services:
       AMQP_USERNAME: '${AMQP_USERNAME:-guest}'
       AMQP_PASSWORD: '${AMQP_PASSWORD:-guest}'
 
-  database:
+  mongo:
     image: 'mongo'
     networks:
       - orders
@@ -34,7 +34,7 @@ services:
     ports:
       - '9081:8081'
     depends_on:
-      - 'database'
+      - 'mongo'
     networks:
       - orders
 

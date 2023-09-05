@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.config.EnableReactiveMongoAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import reactor.core.publisher.Hooks;
 
 @SpringBootApplication
 @EnableScheduling
@@ -13,6 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class OrdersApplication {
 
 	public static void main(String[] args) {
+		Hooks.enableAutomaticContextPropagation();
 		SpringApplication.run(OrdersApplication.class, args);
 	}
 
