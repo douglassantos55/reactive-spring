@@ -1,0 +1,21 @@
+version: '3'
+services:
+  gateway:
+    image: 'eclipse-temurin:17-jdk-alpine'
+    working_dir: '/app'
+    command: [ "./mvnw", "spring-boot:run" ]
+    ports:
+      - '9000:8080'
+    environment:
+      CUSTOMERS_URL: '${CUSTOMERS_URL:-http://localhost/customers}'
+      RESTAURANTS_URL: '${RESTAURANTS_URL:-http://localhost/restaurants}'
+      ORDERS_URL: '${ORDERS_URL:-http://localhost/orders}'
+    networks:
+      - infra
+    volumes:
+      - '.:/app'
+
+networks:
+  infra:
+    name: fgto-infra
+    external: true
