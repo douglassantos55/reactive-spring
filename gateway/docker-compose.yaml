@@ -10,12 +10,37 @@ services:
       CUSTOMERS_URL: '${CUSTOMERS_URL:-http://localhost/customers}'
       RESTAURANTS_URL: '${RESTAURANTS_URL:-http://localhost/restaurants}'
       ORDERS_URL: '${ORDERS_URL:-http://localhost/orders}'
+      MONGODB_HOST: '${DATABASE_HOSTNAME:-localhost}'
+      MONGODB_DATABASE: '${DATABASE_NAME:-auth}'
     networks:
       - infra
+      - gateway
     volumes:
       - '.:/app'
 
+  mongo:
+    image: 'mongo'
+    networks:
+      - gateway
+    volumes:
+      - 'database:/data/db'
+
+  dbadmin:
+    image: 'mongo-express'
+    ports:
+      - '9981:8081'
+    depends_on:
+      - 'mongo'
+    networks:
+      - gateway
+
+volumes:
+  database:
+    driver: local
+
 networks:
+  gateway:
+    driver: bridge
   infra:
     name: fgto-infra
     external: true

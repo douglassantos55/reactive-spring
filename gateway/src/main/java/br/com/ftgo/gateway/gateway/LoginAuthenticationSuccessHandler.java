@@ -2,7 +2,6 @@ package br.com.ftgo.gateway.gateway;
 
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -22,17 +21,17 @@ public class LoginAuthenticationSuccessHandler implements ServerAuthenticationSu
     @Override
     public Mono<Void> onAuthenticationSuccess(WebFilterExchange webFilterExchange, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        DataBuffer buffer = webFilterExchange.getExchange().getResponse().bufferFactory().wrap(getToken(user.getUsername()).getBytes());
+        DataBuffer buffer = webFilterExchange.getExchange().getResponse().bufferFactory().wrap(getToken(user).getBytes());
 
         return webFilterExchange.getExchange().getResponse().writeWith(Mono.just(buffer));
     }
 
-    private String getToken(String username) {
+    private String getToken(User user) {
         Instant now = Instant.now();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(username)
-                .issuer("br.com.ftgo.gateway.security")
+                .subject(user.getUsername())
+                .issuer("br.com.ftgo.gateway")
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(3600))
                 .build();
